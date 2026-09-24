@@ -4,7 +4,8 @@ Ergänzt [KONZEPT.md](KONZEPT.md). Jedes Feature hat eine ID, eine Priorität, e
 Guardrail-Verweise wie `S3` oder `K2` beziehen sich auf Abschnitt 7 im Konzept.
 
 **Priorität:** 🟥 Must (MVP) · 🟧 Should · 🟨 Could
-**Annahmen** für offene Entscheidungen, jederzeit änderbar: SvelteKit, VPS mit Docker Compose, Claude API, Board 1,64".
+**Annahmen** (siehe [ADR-0003](adr/0003-stack.md)): SvelteKit, VPS mit Docker Compose, Mosquitto/MQTT, Claude API, Board 1,64" V1.
+Technische Details: [spec/](spec/).
 
 ---
 
@@ -13,7 +14,7 @@ Guardrail-Verweise wie `S3` oder `K2` beziehen sich auf Abschnitt 7 im Konzept.
 | ID | Feature | Prio | Phase |
 |---|---|---|---|
 | F-01 | Konto & Login | 🟥 | 1 |
-| F-02 | Einrichtungs-Assistent (Flashen, WLAN, Pairing) | 🟥 | 2 |
+| F-02 | Einrichtungs-Assistent (Flashen, Gerätezugang, WLAN) | 🟥 | 2 |
 | F-03 | Geräteverwaltung & Status | 🟥 | 2 |
 | F-04 | Animationen & Fernsteuerung | 🟥 | 2 |
 | F-05 | Aufgaben | 🟥 | 3 |
@@ -29,7 +30,7 @@ Guardrail-Verweise wie `S3` oder `K2` beziehen sich auf Abschnitt 7 im Konzept.
 | F-15 | Gewohnheiten (Habits) | 🟨 | 5 |
 | F-16 | Sprache (Push-to-Talk) | 🟨 | 5 |
 | F-17 | Kalender-Import (ICS) | 🟨 | 5 |
-| F-18 | Firmware-Updates über die Web-App (OTA) | 🟧 | 5 |
+| F-18 | Firmware-Updates über die Web-App (OTA) | 🟨 | 5 |
 | F-19 | Statistiken | 🟨 | 5 |
 | F-20 | Datenexport & Konto löschen | 🟧 | 3 |
 | F-21 | PWA & Browser-Benachrichtigungen | 🟧 | 3 |
@@ -53,24 +54,28 @@ Guardrail-Verweise wie `S3` oder `K2` beziehen sich auf Abschnitt 7 im Konzept.
 ## F-02 Einrichtungs-Assistent 🟥
 **Story:** Als Nutzer will ich mein Tabby komplett im Browser einrichten, ohne etwas zu installieren.
 
-**Ablauf (Wizard mit 4 Schritten)**
-1. **Verbinden:** Board per USB anstecken, Button „Tabby verbinden“. Im Browser öffnet sich der Dialog zur Auswahl des USB-Geräts (WebSerial).
-2. **Firmware aufspielen:** Die aktuelle Firmware aus dem Server-Release wird per ESP Web Tools geflasht, mit Fortschrittsbalken.
-3. **WLAN:** Netzwerk und Passwort eingeben, die Übertragung läuft per Improv-Protokoll. Das Passwort wird **nicht** an den Server geschickt.
-4. **Koppeln:** Das Gerät zeigt einen 6-stelligen Code. Der Wizard erkennt ihn automatisch über die serielle Verbindung oder lässt ihn eintippen. Danach ist das Gerät verbunden.
+**Ablauf** (Details und Technik: [spec/webapp.md](spec/webapp.md) §2.4)
+1. **Vorbereiten:** Board (V1) per USB-Datenkabel anstecken.
+2. **Verbinden:** Button „Tabby verbinden“ öffnet die USB-Auswahl im Browser (Web Serial). Chip und Flash-Größe werden geprüft.
+3. **Registrieren:** Name vergeben. Das Backend erzeugt den Gerätezugang (`device_id`, `device_secret`, [ADR-0002](adr/0002-identitaet-per-factory-record.md)).
+4. **Flashen:** Firmware aus unserem CI plus Factory-Record (Zugangsdaten), Fortschrittsbalken, ca. 2–4 min
+5. **WLAN:** Netzwerk und Passwort eingeben, Übertragung per USB-Befehl `PROVISION`. Das Passwort wird **nicht** an den Server geschickt.
+6. **Online-Check:** Warten, bis Tabby sich beim Broker meldet, dann spielt die Test-Animation `confirmation`.
 
 **AK**
-- [ ] Browser ohne WebSerial (Safari, Firefox) bekommen einen klaren Hinweis: „Einrichtung bitte einmalig in Chrome/Edge“.
-- [ ] Nach erfolgreichem Pairing erscheint das Gerät in F-03 als „online“.
-- [ ] Pairing-Code: 5 min gültig, nur einmal nutzbar, max. 5 Fehlversuche pro Code (S5).
-- [ ] Ein bereits gekoppeltes Gerät kann nur nach Werksreset neu gekoppelt werden (H6).
+- [ ] Browser ohne Web Serial (Safari, Firefox) bekommen einen klaren Hinweis: „Einrichtung bitte einmalig in Chrome/Edge“.
+- [ ] Falscher Chip oder falsche Flash-Größe → Abbruch **vor** dem Flashen.
+- [ ] Das Geräte-Secret landet nie in `localStorage`, Logs oder der Browser-Konsole (S5).
+- [ ] Nach Schritt 6 erscheint das Gerät in F-03 als „online“ (Timeout 60 s mit Hilfetext).
+- [ ] **Update-Modus:** Ein vorhandenes Gerät kann neu geflasht werden, ohne den Zugang zu verlieren (`factory_data` bleibt).
+- [ ] Alternative WLAN-Einrichtung über das Captive Portal (Handy → Tabby-WLAN → `192.168.4.1`) ist im Assistenten erklärt.
 
 ---
 
 ## F-03 Geräteverwaltung & Status 🟥
 **Story:** Als Nutzer will ich sehen, ob mein Tabby online ist, und es verwalten.
 - Liste der Geräte mit Name, Status (online/offline, zuletzt gesehen), Firmware-Version, WLAN-Signal
-- Umbenennen, „primäres Gerät“ festlegen, **Entkoppeln** (widerruft das Token, S3)
+- Umbenennen, „primäres Gerät“ festlegen, **Entkoppeln** (löscht den MQTT-Zugang, S3)
 
 **AK**
 - [ ] Der Status wird live aktualisiert (≤ 2 s nach Connect, ≤ 90 s nach Verbindungsabbruch).
@@ -80,14 +85,14 @@ Guardrail-Verweise wie `S3` oder `K2` beziehen sich auf Abschnitt 7 im Konzept.
 
 ## F-04 Animationen & Fernsteuerung 🟥
 **Story:** Als Nutzer will ich Tabby aus dem Browser Animationen abspielen lassen.
-- Galerie mit allen Animationen, die das Gerät im `hello` meldet (Vorschau als GIF/WebP)
-- Klick → `animation.play`, optional in Schleife
-- Grundstimmung setzen (`face.state`): idle, happy, focus, sleepy, alert
-- Kurzen Text senden (`text.show`, max. 60 Zeichen, K5)
+- Galerie mit allen 84 Animationen aus dem Manifest der installierten Firmware (Vorschau als WebP)
+- Klick → Animations-ID als Befehl (z. B. `confirmation`, `working_in>working_loop`)
+- Kurzen Text senden (`UI/title_subtitle`, Titel max. 40, Untertitel max. 60 Zeichen, bereinigt, K5)
+- „Zurücksetzen“ → `CLEAR`
 
 **AK**
 - [ ] Vom Klick bis zur Animation am Gerät vergehen < 300 ms (im selben Land).
-- [ ] Animationen, die das Gerät nicht kennt, werden in der Galerie nicht angeboten.
+- [ ] Unbekannte Animationen führen nicht zu einem Fehler (Firmware antwortet `unsupported_animation`).
 - [ ] Max. 5 Befehle pro Sekunde pro Gerät, alles darüber wird verworfen (H5).
 
 ---
@@ -97,7 +102,7 @@ Guardrail-Verweise wie `S3` oder `K2` beziehen sich auf Abschnitt 7 im Konzept.
 - Anlegen, bearbeiten, abhaken, löschen, sortieren (Drag & Drop)
 - Felder: Titel, Notiz, Fälligkeitsdatum, Priorität (niedrig/mittel/hoch), Status
 - Ansichten: **Heute**, **Demnächst**, **Erledigt**
-- **„Jetzt dran“:** genau eine Aufgabe ist aktiv und wird auf dem Gerät angezeigt (`task.current`).
+- **„Jetzt dran“:** genau eine Aufgabe ist aktiv und wird auf dem Gerät als Auswahlkarte angezeigt (siehe F-08).
 - Abhaken im Browser oder am Gerät löst am Gerät die Animation „happy“ aus.
 
 **AK**
@@ -117,7 +122,7 @@ Guardrail-Verweise wie `S3` oder `K2` beziehen sich auf Abschnitt 7 im Konzept.
 
 **AK**
 - [ ] Der Timer arbeitet mit **absoluter Endzeit** (`ends_at`). Die Anzeige bleibt nach Reload oder Reconnect korrekt.
-- [ ] Bei WLAN-Abbruch läuft der Timer am Gerät weiter (H3). Nach dem Reconnect gleicht `timer.state` den Zustand ab.
+- [ ] Bei WLAN-Abbruch läuft der Timer am Gerät weiter (H3). Nach dem Reconnect sendet das Backend die Timer-Karte mit neu berechneter Restzeit.
 - [ ] Jede abgeschlossene Session wird für F-19 gespeichert.
 
 ---
@@ -126,8 +131,8 @@ Guardrail-Verweise wie `S3` oder `K2` beziehen sich auf Abschnitt 7 im Konzept.
 **Story:** Als Nutzer will ich zu einer bestimmten Zeit von Tabby erinnert werden.
 - Einmalig oder wiederkehrend (täglich, werktags, wöchentlich)
 - Optional an eine Aufgabe gebunden
-- Auslösung: `reminder.fire` am Gerät (Animation „alert“ + Titel) plus Browser-Benachrichtigung
-- Am Gerät antippen = erledigt, lange drücken = 10 min Schlummern
+- Auslösung: Auswahlkarte `UI/choice_2?reminder:<TITEL>|ERLEDIGT|SPÄTER` am Gerät plus Browser-Benachrichtigung
+- Am Gerät „ERLEDIGT“ tippen = erledigt, „SPÄTER“ = 10 min Schlummern
 
 **AK**
 - [ ] Auslösung mit höchstens 30 s Verzögerung
@@ -139,34 +144,39 @@ Guardrail-Verweise wie `S3` oder `K2` beziehen sich auf Abschnitt 7 im Konzept.
 ## F-08 Touch-Bedienung am Gerät 🟥
 **Story:** Als Nutzer will ich Tabby direkt antippen können, ohne zum Browser zu wechseln.
 
-| Zustand am Gerät | Tap | Doppeltipp | Lang drücken | Wischen |
-|---|---|---|---|---|
-| Idle | nächste Aufgabe anzeigen | – | Fokus-Timer starten (Standard-Preset) | durch Aufgaben blättern |
-| Aufgabe angezeigt | – | Aufgabe erledigt | Fokus für diese Aufgabe starten | nächste/vorige Aufgabe |
-| Fokus läuft | Restzeit groß anzeigen | Pause/Weiter | Timer stoppen (mit Bestätigung) | – |
-| Erinnerung | erledigt | – | 10 min Schlummern | wegwischen |
-| Schlafmodus | aufwecken | – | – | – |
+Wir nutzen die **Auswahlkarten der Upstream-Firmware** (`UI/choice_2`). Getippte Optionen meldet das Gerät per `event` (FW-2). Dafür braucht es keine neue Gestenerkennung in der Firmware.
+
+| Zustand am Gerät | Karte | Option 1 | Option 2 |
+|---|---|---|---|
+| Aufgabe „Jetzt dran“ | `UI/choice_2?task:<TITEL>\|ERLEDIGT\|FOKUS 25` | Aufgabe erledigt → `task_completed`, nächste Aufgabe | Fokus 25 min für diese Aufgabe |
+| Fokus-Ende | `UI/choice_2?focus_end:GESCHAFFT!\|PAUSE\|WEITER` | 5 min Pause | nächster Fokusblock |
+| Pausen-Ende | `UI/choice_2?break_end:PAUSE VORBEI\|LOS\|NOCH 5` | Fokus starten | Pause verlängern |
+| Erinnerung | `UI/choice_2?reminder:<TITEL>\|ERLEDIGT\|SPÄTER` | erledigt | 10 min schlummern |
+| KI-Bestätigung (K2) | `UI/choice_2?ai:<FRAGE>\|JA\|NEIN` | Aktion bestätigen | ablehnen |
+
+*Optional (🟨, FW-2b):* freie Gesten im Idle-Zustand (Tap = nächste Aufgabe, lang drücken = Fokus). Nur wenn die Firmware das einfach hergibt.
 
 **AK**
-- [ ] Jede Geste gibt sofort sichtbares Feedback am Gerät (< 100 ms), auch offline.
-- [ ] Offline-Gesten, die Daten ändern, landen in einer Warteschlange und werden nach dem Reconnect gesendet.
+- [ ] Jedes Antippen gibt sofort sichtbares Feedback am Gerät (< 100 ms), auch offline.
+- [ ] Eine Auswahl wird innerhalb von 1 s im Browser sichtbar.
+- [ ] Offline getippte Auswahlen gehen verloren. Das Gerät zeigt dann „offline“, und die Karte bleibt nach dem Reconnect stehen (kein stiller Datenverlust).
 
 ---
 
 ## F-09 Geräte-Einstellungen 🟥
 - Helligkeit (Tag/Nacht), **Ruhezeiten** (Standard 22–7 Uhr), Zeitzone
 - Screensaver nach X Minuten Inaktivität (Standard 10 min, H1)
-- Werksreset aus der Web-App auslösen (setzt zusätzlich das Token zurück)
+- Entkoppeln und Werksreset erklärt (siehe F-03, H6)
 
 **AK**
-- [ ] Einstellungen werden sofort per `settings.set` übertragen und im Gerät dauerhaft gespeichert (NVS).
+- [ ] Helligkeit wird sofort übertragen (FW-6). Ruhezeiten und Screensaver steuert das Backend (Director → `sleeping_loop` + Helligkeit runter).
 - [ ] In den Ruhezeiten ist das Display aus oder minimal gedimmt.
 
 ---
 
 ## F-10 Tabby-Simulator 🟧
 **Story:** Als Entwickler will ich ohne Hardware testen können.
-- Ein virtuelles Tabby im Browser (Canvas mit dem Displayformat 280×456), das sich wie ein echtes Gerät per WebSocket anmeldet
+- Ein virtuelles Tabby im Browser (Canvas mit dem Displayformat 280×456), das sich wie ein echtes Gerät per MQTT (über WebSocket) am Broker anmeldet
 - Es spielt dieselben Animationen (WebP) und simuliert Touch per Maus.
 - Auch nützlich als „zweites Tabby“ auf dem Handy
 
@@ -202,7 +212,7 @@ Guardrail-Verweise wie `S3` oder `K2` beziehen sich auf Abschnitt 7 im Konzept.
 ## F-13 KI-Kostenkontrolle 🟥 (ab Phase 4)
 - Die Tokens jedes Aufrufs werden gezählt und in € umgerechnet angezeigt (Tag/Monat).
 - Hartes Tages- und Monatslimit (konfigurierbar), Warnung ab 80 % (K4)
-- Modellwahl: kleines Modell als Standard, großes nur für F-12
+- Modell per Env (`TABBY_AI_MODEL`, Standard `claude-opus-5`), Effort `low` im Chat, `medium` für F-12
 
 **AK**
 - [ ] Bei überschrittenem Limit lehnt das Backend weitere KI-Aufrufe ab, *bevor* die API aufgerufen wird.
@@ -225,7 +235,8 @@ Guardrail-Verweise wie `S3` oder `K2` beziehen sich auf Abschnitt 7 im Konzept.
 - ICS-URL eintragen (nur lesend), Abruf alle 15 min
 - 10 min vor einem Termin kommt eine Erinnerung am Gerät, F-12 berücksichtigt die Termine.
 
-## F-18 OTA-Updates 🟧
+## F-18 OTA-Updates 🟨
+- **Voraussetzung:** Das Partitionslayout erlaubt zwei App-Slots ([ADR-0004](adr/0004-kein-ota-im-mvp.md)). Bis dahin: Update per USB im Assistenten (F-02).
 - Die Web-App zeigt „Update verfügbar“, auf Klick lädt das Gerät die signierte Firmware (S6).
 - Fehlgeschlagener Boot führt zum automatischen Rollback. Die Web-App zeigt das Ergebnis an.
 
@@ -245,34 +256,19 @@ Guardrail-Verweise wie `S3` oder `K2` beziehen sich auf Abschnitt 7 im Konzept.
 
 ## Anhang A – Zustände am Gerät
 
-```
-BOOT ─► kein WLAN? ─► SETUP (wartet auf Improv)
-  │
-  └► WLAN ok ─► CONNECTING ─► kein Token? ─► PAIRING (zeigt Code)
-                    │                            │
-                    │◄───────── Token erhalten ──┘
-                    ▼
-                  IDLE ◄──► TASK ◄──► FOCUS / BREAK
-                    │  ▲
-         Erinnerung │  │ erledigt/Schlummern
-                    ▼  │
-                  REMINDER
-   jederzeit: OFFLINE-Badge (lokal weiter), SLEEP (Ruhezeit/Screensaver),
-              THINKING (KI antwortet), UPDATING (OTA)
-```
+Den Soll-Zustand berechnet der **Device Director** im Backend ([spec/backend.md](spec/backend.md) §5), Priorität von oben nach unten:
 
-## Anhang B – Datenmodell (erste Version)
+```
+sleep      Ruhezeit → sleeping_loop, gedimmt
+reminder   offene Erinnerung → Auswahlkarte ERLEDIGT/SPÄTER
+thinking   KI antwortet → searching_loop
+focus      Timer läuft → working_loop + Timer-Karte
+break      Pause läuft → relaxing_01_loop + Timer-Karte
+task       „Jetzt dran“ gesetzt → Auswahlkarte ERLEDIGT/FOKUS 25
+idle       sonst → Idle-Animation der Firmware
+```
+Gerätseitig (Firmware, upstream): Setup/Captive Portal, falls kein WLAN eingerichtet ist. Offline-Anzeige, falls der Broker nicht erreichbar ist.
 
-| Tabelle | Wichtige Felder |
-|---|---|
-| `users` | id, email, created_at, timezone, ai_budget_day, ai_budget_month |
-| `sessions` | id, user_id, expires_at |
-| `devices` | id, user_id, name, board, fw_version, token_hash, last_seen_at, settings (JSON) |
-| `pairing_codes` | code_hash, device_nonce, expires_at, attempts, used_at |
-| `tasks` | id, user_id, title, note, due_date, priority, status, sort_order, is_current, completed_at |
-| `focus_sessions` | id, user_id, task_id?, kind (focus/break), started_at, ends_at, ended_at, state |
-| `reminders` | id, user_id, task_id?, title, fire_at, rrule?, last_fired_at, snoozed_until |
-| `notes` | id, user_id, title, body_md, updated_at |
-| `habits` / `habit_logs` | id, user_id, name, schedule / habit_id, date |
-| `ai_messages` | id, user_id, role, content, tool_calls (JSON), created_at |
-| `ai_usage` | id, user_id, model, input_tokens, output_tokens, cost_eur, created_at |
+## Anhang B – Datenmodell
+
+Siehe [spec/backend.md](spec/backend.md) §4.

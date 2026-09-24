@@ -10,78 +10,74 @@
 | Bereich | Original (Hey Taby) | Unsere Cloud-Version |
 |---|---|---|
 | App | Desktop-App (Mac/Win), die man installiert | Web-App/PWA im Browser |
-| KI | lokale Gemma-Modelle (2B/4B/12B) auf dem Rechner | KI-API in der Cloud (z. B. Claude) oder ein selbst gehostetes Modell |
-| Gerät ↔ App | USB-C (auch BLE/WLAN-Befehle) zur Desktop-App | WLAN → WebSocket (TLS) → Cloud-Backend |
-| Hardware | Waveshare ESP32-S3 AMOLED (1,64" rechteckig oder 1,32" rund), Magnethalterung | identisch, Firmware wird um einen Cloud-Client erweitert |
+| KI | lokale Gemma-Modelle (2B/4B/12B) auf dem Rechner | Claude API in der Cloud |
+| Gerät ↔ App | USB-C/BLE zur Desktop-App, dazu „Taby Cloud“ per MQTT | WLAN → **MQTT über TLS** → eigener Broker in unserer Cloud |
+| Hardware | Waveshare ESP32-S3 AMOLED (1,64" rechteckig oder 1,32" rund), Magnethalterung | identisch (**1,64" V1**), Upstream-Firmware mit kleinen Ergänzungen |
 | Funktionen | Aufgaben, Notizen, Gewohnheiten, Fokus-Timer, Erinnerungen, Animationen | dieselben, dazu Fernsteuerung des Geräts aus dem Browser |
 
 Offene Firmware: [TRIIIS-LABS/firmware-taby](https://github.com/TRIIIS-LABS/firmware-taby). Der Code und die Gehäuse stehen unter **Apache-2.0**. Für die Taby-Artwork (Gesicht, Animationen) gelten **eigene Bedingungen**: Die Nutzung in privaten Projekten ist erlaubt, solange Taby als Taby erkennbar bleibt. Man darf die Figur aber nicht als eigenes Produkt oder eigenen Charakter umlabeln (siehe Guardrails, Abschnitt 7).
+
+> **Wichtigste Erkenntnis aus der Firmware-Analyse** ([spec/firmware.md](spec/firmware.md)): Die Upstream-Firmware bringt einen fertigen **MQTT-Cloud-Client** mit, dazu WLAN-Einrichtung per USB-Befehl oder Captive Portal und eine Befehlssprache für Animationen, Text-, Auswahl- und Timer-Karten. Wir müssen also **keinen eigenen Cloud-Client schreiben**, sondern nur die Broker-Adresse umbiegen und die Gerätezugangsdaten selbst erzeugen ([ADR-0001](adr/0001-mqtt-statt-websocket.md), [ADR-0002](adr/0002-identitaet-per-factory-record.md)).
 
 ---
 
 ## 2. Zielbild & Architektur
 
 ```
- ┌──────────────┐         HTTPS / WSS          ┌─────────────────────────────┐
- │  Browser     │ ◄──────────────────────────► │  Cloud (1 VPS, Docker)      │
- │  Web-App/PWA │                              │                             │
- │  (Desktop,   │                              │  Caddy (TLS, Reverse Proxy) │
- │   Handy)     │                              │  API + Realtime-Gateway     │
- └──────────────┘                              │  Worker (Timer/Reminder)    │
-        │ nur einmalig:                        │  Postgres                   │
-        │ WebSerial (Flashen + WLAN-Setup)     │  ─► LLM-API (extern)        │
-        ▼                                      └──────────────▲──────────────┘
- ┌──────────────┐          WSS (ausgehend)                    │
+ ┌──────────────┐     HTTPS (REST + SSE)       ┌──────────────────────────────┐
+ │  Browser     │ ◄──────────────────────────► │  Cloud (1 VPS, Docker)       │
+ │  Web-App/PWA │                              │                              │
+ │  (Desktop,   │                              │  Caddy   (TLS, Web, Proxy)   │
+ │   Handy)     │                              │  API     (REST, SSE, Director│
+ └──────────────┘                              │           Scheduler, KI)     │
+        │ nur einmalig (Chrome/Edge):          │  Postgres                    │
+        │ WebSerial → Flashen + WLAN           │  Mosquitto (MQTT-Broker)     │
+        ▼                                      │  ─► Claude API (extern)      │
+ ┌──────────────┐     MQTT über TLS :8883      └──────────────▲───────────────┘
  │ Physical     │ ────────────────────────────────────────────┘
- │ Tabby        │   Gerät baut die Verbindung selbst auf,
- │ ESP32-S3     │   keine offenen Ports, kein PC nötig
+ │ Tabby        │   Das Gerät baut die Verbindung selbst auf:
+ │ ESP32-S3     │   keine offenen Ports am Gerät, kein PC nötig
  └──────────────┘
 ```
 
 **Kernprinzipien**
 
-1. **Cloud ist die Quelle der Wahrheit.** Aufgaben, Timer und Zustand liegen im Backend. Browser und Gerät sind nur „Views“ und „Controller“.
-2. **Das Gerät verbindet sich immer ausgehend** per WSS. Dadurch gibt es kein Port-Forwarding und keine lokale Bridge.
-3. **Browser-only.** Auch Flashen und WLAN-Einrichtung laufen im Browser (WebSerial via [ESP Web Tools](https://esphome.github.io/esp-web-tools/) + [Improv WiFi](https://www.improv-wifi.com/)). Das klappt nur mit Chrome/Edge und nur einmalig. Danach reicht jeder Browser, auch Safari oder das Handy.
-4. **Gerät bleibt offline nutzbar.** Ein laufender Fokus-Timer und die Animationen funktionieren auch ohne Verbindung. Nach dem Reconnect wird der Zustand synchronisiert.
+1. **Cloud ist die Quelle der Wahrheit.** Aufgaben, Timer und Zustand liegen im Backend. Ein „Device Director“ entscheidet, was Tabby zeigt ([spec/backend.md](spec/backend.md) §5).
+2. **Das Gerät verbindet sich immer ausgehend** per MQTT über TLS. Dadurch gibt es kein Port-Forwarding und keine lokale Bridge.
+3. **Browser-only.** Flashen, Gerätezugang und WLAN-Einrichtung laufen im Browser (esptool-js + Web Serial). Das klappt nur mit Chrome/Edge und nur einmalig. Danach reicht jeder Browser, auch Safari oder das Handy. Die Firmware wird in GitHub Actions gebaut, lokal wird nichts installiert.
+4. **Gerät bleibt offline nutzbar.** Animationen und ein laufender Timer funktionieren auch ohne Verbindung. Nach dem Reconnect sendet das Backend den Soll-Zustand neu.
+5. **Nah an upstream bleiben.** Firmware-Änderungen sind minimal und abschaltbar (`CONFIG_TABBY_CLOUD`).
 
 ---
 
 ## 3. Hardware
 
-### 3.1 Stückliste (Taby 1.64, Empfehlung)
+Details, Einkaufsliste und Montage: **[spec/hardware.md](spec/hardware.md)**.
 
-| Teil | Hinweis |
+- **Waveshare ESP32-S3-Touch-AMOLED-1.64, Revision V1** (280×456, 16 MB Flash, 8 MB PSRAM, Touch, IMU, Akku-Anschluss, **kein Mikrofon/Lautsprecher**). ⚠️ V2 wird von der Firmware nicht unterstützt.
+- USB-C-Datenkabel, USB-Netzteil, Neodym-Magnet 20 × 10 × 2 mm, Stahlplättchen, Gummifolie
+- 3D-gedrucktes Upstream-Gehäuse (Base, Back, Handle)
+
+### 3.1 Firmware-Plan
+
+Details: **[spec/firmware.md](spec/firmware.md)**. Kurzfassung:
+
+| ID | Änderung an der Upstream-Firmware |
 |---|---|
-| Waveshare **ESP32-S3-Touch-AMOLED-1.64** (280×456) | Hauptplatine mit Touch, WLAN und BLE. Die Firmware hat hier die meisten Animationen (84). |
-| USB-C-**Datenkabel** | Wird nur zum ersten Flashen gebraucht, danach reicht ein USB-Netzteil. |
-| Neodym-Blockmagnet 20 × 10 × 2 mm + Stahlplättchen | Magnethalterung wie beim Original |
-| Rutschfeste Gummiauflage | Unterseite |
-| 3D-Druck-Gehäuse (Base, Back, Handle) | Dateien aus dem Firmware-Repo, PLA oder PETG |
-| *optional* USB-Netzteil 5 V / 1 A | Damit läuft das Gerät dauerhaft ohne PC. |
-
-Alternative: **ESP32-S3-Touch-AMOLED-1.32** (rund, 466×466). Dafür gibt es aber weniger Animationen, und die Gehäusedateien fehlen noch.
-
-### 3.2 Hardware-Fragen vor dem Kauf
-
-- [ ] Hat das Board ein **Mikrofon oder einen Lautsprecher**? Das steht im Waveshare-Datenblatt. Falls nicht, läuft Sprache über das Browser-Mikrofon (sowieso die bevorzugte Variante, siehe Guardrails).
-- [ ] Gibt es einen **Akku-Anschluss**? Wenn ja: nur Zellen mit Schutzschaltung verwenden.
-- [ ] Gibt es eine **IMU** (Lage-/Bewegungssensor)? Damit wäre „Antippen/Umdrehen = Timer pausieren“ möglich.
-
-### 3.3 Firmware-Plan
-
-- Das offizielle Repo **forken** (Apache-2.0, Lizenz und NOTICE bleiben erhalten).
-- Ein neues Modul `cloud_client` ergänzen:
-  - WLAN-Provisioning per **Improv** (seriell) und optional per BLE
-  - **WSS-Client** mit TLS und gepinnter CA, Heartbeat und exponentiellem Backoff beim Reconnect
-  - einen **Pairing-Flow** (siehe Abschnitt 5.2)
-  - Mapping der Cloud-Nachrichten auf die bestehenden „device commands“ der Firmware
-- Die bestehende USB-Befehlsschnittstelle bleibt erhalten. Sie ist nützlich zum Debuggen und für WebSerial.
-- **OTA-Updates** laufen über zwei App-Partitionen (A/B) mit Rollback, wenn der Boot fehlschlägt.
+| FW-1 | Broker-URI konfigurierbar (Kconfig) → unser `mqtts://mqtt.<domain>:8883` |
+| FW-2 | Touch- und Auswahl-Events per MQTT melden (`devices/<id>/event`) |
+| FW-3 | Lokalen HTTP-Server (ohne Auth) im Heim-WLAN abschalten |
+| FW-4 | BLE im Cloud-Build abschalten (kein Bonding) |
+| FW-5 | Last Will → Online/Offline-Status |
+| FW-6 | Helligkeit per MQTT |
+| FW-7 | eigene Build-Variante im CI |
+| FW-8 | OTA: erst in Phase 5 untersuchen ([ADR-0004](adr/0004-kein-ota-im-mvp.md)) |
 
 ---
 
 ## 4. Cloud & Hosting
+
+Details, Compose, Caddy- und Mosquitto-Konfiguration: **[spec/infra.md](spec/infra.md)**.
 
 ### 4.1 Empfehlung (Hobby, günstig, DSGVO-freundlich)
 
@@ -89,88 +85,66 @@ Alternative: **ESP32-S3-Touch-AMOLED-1.32** (rund, 466×466). Dafür gibt es abe
 
 | Container | Aufgabe |
 |---|---|
-| `caddy` | automatisches HTTPS (Let's Encrypt), Reverse Proxy |
-| `api` | REST-/RPC-API für die Web-App und WebSocket-Gateway für Geräte und Browser |
-| `worker` | Timer, Erinnerungen, geplante Jobs (DB-basierte Queue) |
+| `caddy` | automatisches HTTPS (Let's Encrypt), liefert die Web-App aus, Reverse Proxy für die API |
+| `api` | REST + SSE für die Web-App, MQTT-Client für die Geräte, Scheduler, KI |
 | `postgres` | Daten |
-| `web` | statisch gebaute Web-App (alternativ direkt über Caddy ausgeliefert) |
+| `mosquitto` | MQTT-Broker mit TLS und Dynamic Security (ein Zugang pro Gerät, ACL pro Topic) |
+| `backup` | täglicher verschlüsselter `pg_dump` in einen externen Speicher |
 
-Backups: täglicher `pg_dump`, verschlüsselt, in einen externen Object Storage.
+Kosten: ca. 5–16 € im Monat, inklusive KI-Budget.
 
 ### 4.2 Alternativen
 
 | Option | Vorteil | Nachteil |
 |---|---|---|
-| **VPS + Compose** *(empfohlen)* | volle Kontrolle, WebSockets problemlos, fixe Kosten | Updates und Backups muss man selbst machen |
-| Fly.io / Railway | einfaches Deploy | WebSocket-Limits und Kosten beachten |
-| Cloudflare Workers + Durable Objects + D1 | Serverless, Realtime pro Gerät elegant | Vendor-Lock-in, andere Programmierlogik |
-| Supabase (Auth + Postgres + Realtime) + kleiner Gateway-Dienst | Auth und DB fertig | Das Gerät braucht trotzdem einen eigenen Gateway |
+| **VPS + Compose** *(empfohlen)* | volle Kontrolle, MQTT-Port problemlos, fixe Kosten | Updates und Backups muss man selbst machen |
+| Managed MQTT (z. B. HiveMQ Cloud, EMQX Cloud Free) + PaaS für die API | weniger Betrieb | mehr Anbieter, Free-Tier-Limits, Daten evtl. außerhalb der EU |
+| Serverless (Cloudflare) | kein Server | MQTT-Broker trotzdem extern nötig |
 
-### 4.3 Tech-Stack (Vorschlag, TypeScript durchgängig)
+### 4.3 Tech-Stack
 
-- **Backend:** Node.js + [Hono](https://hono.dev/) oder Fastify, `ws` für WebSockets, Drizzle ORM, Zod für Schemas
-- **Frontend:** SvelteKit oder Next.js als **PWA** (installierbar ohne App Store, also auch „keine Installation“ im klassischen Sinn)
-- **Shared:** Paket `protocol` mit Zod-Schemas für alle Gerätenachrichten. Daraus werden auch C-Header oder JSON-Schema für die Firmware generiert.
-- **Firmware:** PlatformIO oder ESP-IDF (je nachdem, was das Upstream-Repo nutzt)
+Siehe [ADR-0003](adr/0003-stack.md): TypeScript, **SvelteKit** (Web), **Hono** + Drizzle + Zod (API), **Postgres**, **Mosquitto**, **Claude API**. Die Firmware bleibt C/ESP-IDF 5.4.2 wie upstream.
 
 ### 4.4 Repo-Struktur (Monorepo)
 
 ```
 heytabbycloud/
 ├─ apps/
-│  ├─ web/          # Web-App (PWA)
-│  └─ api/          # API, WS-Gateway, Worker
+│  ├─ web/          # SvelteKit-PWA inkl. Einrichtungs-Assistent und Simulator
+│  └─ api/          # Hono-API, MQTT-Client, Director, Scheduler, KI
 ├─ packages/
-│  └─ protocol/     # Nachrichten-Schemas (Zod) + generierte Firmware-Header
-├─ firmware/        # Fork der Taby-Firmware + cloud_client
-├─ infra/           # docker-compose.yml, Caddyfile, Backup-Skripte
-└─ docs/            # dieses Konzept, Protokoll-Spec, ADRs
+│  └─ protocol/     # Zod-Schemas, Befehls-Builder, Text-Bereinigung, Factory-Record
+├─ firmware/        # Fork der Taby-Firmware (FW-1 … FW-8)
+├─ infra/           # docker-compose.yml, Caddyfile, mosquitto.conf, Backup
+└─ docs/            # Konzept, Features, Bauplan, spec/, adr/
 ```
 
 ---
 
-## 5. Gerät ↔ Cloud: Protokoll & Pairing
+## 5. Gerät ↔ Cloud: Protokoll & Gerätezugang
 
-### 5.1 Transport
+Details: **[spec/protocol.md](spec/protocol.md)**.
 
-- **WSS** auf `wss://<domain>/device`, JSON-Nachrichten (klein, Firmware-freundlich)
-- Jede Nachricht: `{ "v": 1, "type": "...", "id": "<msg-id>", "data": { ... } }`
-- **Ack** für wichtige Befehle: Das Gerät antwortet mit `{ "type": "ack", "ref": "<msg-id>" }`.
-- Heartbeat alle 30 s. Nach 90 s ohne Heartbeat gilt das Gerät als „offline“.
-- *Alternative:* MQTT über TLS mit einem Broker (Mosquitto/EMQX). Das lohnt sich erst bei vielen Geräten.
+### 5.1 Transport: MQTT (Upstream-Protokoll)
 
-### 5.2 Pairing (ohne PC-Software)
-
-1. Das Gerät ist frisch geflasht und bekommt per Improv (im Browser) die WLAN-Daten.
-2. Das Gerät verbindet sich mit der Cloud, fragt einen Code an und zeigt einen **6-stelligen Pairing-Code** (plus QR) auf dem Display.
-3. Der Nutzer ist in der Web-App eingeloggt und gibt den Code ein. Dadurch wird das Gerät dem Konto zugeordnet.
-4. Die Cloud stellt ein **gerätespezifisches Token** aus. Das Gerät speichert es in NVS (verschlüsselt, falls Flash-Encryption aktiv ist).
-5. Der Code ist **5 Minuten gültig**, nur einmal nutzbar und hat ein Rate-Limit gegen Brute-Force.
-
-### 5.3 Nachrichtentypen (v1)
-
-**Cloud → Gerät**
-
-| type | data | Wirkung |
+| Topic | Richtung | Inhalt |
 |---|---|---|
-| `animation.play` | `{ name, loop? }` | spielt eine Animation ab (unbekannte Namen werden ignoriert, wie upstream) |
-| `face.state` | `{ mood: idle\|happy\|focus\|sleepy\|alert }` | Grundstimmung |
-| `text.show` | `{ text, ttl_s }` | kurzer Text, z. B. die nächste Aufgabe (max. ~60 Zeichen) |
-| `timer.start` / `timer.pause` / `timer.stop` | `{ ends_at, label }` | Fokus-Timer, Endzeit absolut (bleibt auch offline korrekt) |
-| `reminder.fire` | `{ title }` | Erinnerung mit Animation |
-| `task.current` | `{ id, title, done }` | aktuelle Aufgabe anzeigen |
-| `settings.set` | `{ brightness, quiet_hours, ... }` | Einstellungen |
-| `ota.available` | `{ version, url, sha256, sig }` | Firmware-Update |
+| `devices/<id>/cmd` | Cloud → Gerät | Textbefehl: Animations-ID, `UI/title_subtitle…`, `UI/choice_2…`, `UI/timer…`, `CLEAR` |
+| `devices/<id>/ack` | Gerät → Cloud | Quittung `{ok, state, input, error?}` |
+| `devices/<id>/state` | Gerät → Cloud | Zustand alle 15 s und bei Änderung |
+| `devices/<id>/event` | Gerät → Cloud | **neu:** Touch-/Auswahl-Ereignisse |
+| `devices/<id>/status` | Gerät → Cloud | **neu:** `online`/`offline` (Last Will) |
 
-**Gerät → Cloud**
+Ein Gerät darf nur seine eigenen Topics nutzen (ACL). Das Backend sendet nur Befehle aus einer **Allowlist** und bereinigt alle Nutzertexte.
 
-| type | data | Bedeutung |
-|---|---|---|
-| `hello` | `{ fw, board, caps[], animations[] }` | Anmeldung und Fähigkeiten, damit die Web-App nur Passendes anbietet |
-| `heartbeat` | `{ rssi, uptime, heap }` | Gesundheitsdaten |
-| `touch` | `{ gesture: tap\|double\|long\|swipe }` | Eingabe, z. B. Tap = Aufgabe erledigt, Long = Timer starten |
-| `timer.state` | `{ state, remaining_s }` | Sync nach dem Reconnect |
-| `ack` / `error` | `{ ref, code? }` | Quittung |
+### 5.2 Gerätezugang statt Pairing-Code
+
+1. In der Web-App auf „Neues Tabby“ klicken: Das Backend erzeugt `device_id` und `device_secret` und legt den MQTT-Zugang an.
+2. Der Browser baut daraus den **Factory-Record** (16 KB, mit CRC) und flasht ihn zusammen mit der Firmware per USB.
+3. Die WLAN-Daten gehen per USB-Befehl `PROVISION` direkt an das Gerät und nie an den Server. Alternativ über das Captive Portal mit dem Handy.
+4. Tabby verbindet sich mit dem Broker und ist sofort dem Konto zugeordnet, ohne Code.
+
+Entkoppeln = MQTT-Zugang löschen. Das Gerät fliegt sofort raus.
 
 ---
 
@@ -184,7 +158,7 @@ heytabbycloud/
 - **Fokus-Timer** (Pomodoro): Start im Browser **oder** am Gerät, synchron auf beiden
 - **Erinnerungen**: zeitbasiert, lösen am Gerät eine Animation aus (und optional eine Browser-Notification)
 - **Geräte-Panel**: Online-Status, Animationen per Klick abspielen (Vorschau-Galerie), Helligkeit, Ruhezeiten
-- **Einrichtungs-Assistent**: Flashen, WLAN, Pairing, alles im Browser
+- **Einrichtungs-Assistent**: Flashen, Gerätezugang und WLAN, alles im Browser
 
 **Gerät**
 - zeigt Stimmung, aktuelle Aufgabe und Timer
@@ -196,7 +170,7 @@ heytabbycloud/
 - **Chat in der Web-App**, der über **Tool-Use** echte Aktionen ausführt: `create_task`, `list_tasks`, `complete_task`, `start_timer`, `set_reminder`, `play_animation`
 - **Tagesplanung**: „Plane meinen Tag“ erzeugt aus den offenen Aufgaben einen Vorschlag. Der Nutzer bestätigt ihn, erst dann wird er übernommen.
 - **Gerät als Ausdruck**: Während die KI „denkt“, spielt eine Denk-Animation. Ist die Antwort fertig, zeigt das Gerät eine kurze Zusammenfassung.
-- **Modellwahl**: ein kleines, schnelles Modell für Alltägliches (z. B. Claude Haiku 4.5), ein größeres für Planung (z. B. Claude Sonnet 5). Alternativ ein selbst gehostetes Open-Weight-Modell (Gemma via Ollama), was aber einen GPU-Server braucht und deutlich teurer ist.
+- **Modell**: Standard ist `claude-opus-5` mit niedrigem Effort, per Env umstellbar auf `claude-sonnet-5` oder `claude-haiku-4-5`, falls dir die Kosten wichtiger sind (Details in [spec/ki.md](spec/ki.md)). Ein selbst gehostetes Modell wäre möglich, braucht aber einen GPU-Server und ist deutlich teurer.
 
 ### 6.3 Phase 5: Nice-to-have
 
@@ -204,7 +178,7 @@ heytabbycloud/
 - **Gewohnheiten/Habits** mit Streak-Anzeige auf dem Gerät
 - **Sprache** per Push-to-Talk im Browser, Transkription über eine Cloud-API
 - **Kalender-Import** (ICS-URL, nur lesend), damit das Gerät vor Terminen erinnert
-- **OTA-Updates** aus der Web-App
+- **OTA-Updates** aus der Web-App (vorher Partitionslayout klären, [ADR-0004](adr/0004-kein-ota-im-mvp.md))
 - **Statistiken**: Fokuszeit pro Tag/Woche
 - **Mehrere Geräte** (Schreibtisch + Regal), eines davon als „primär“
 
@@ -223,12 +197,12 @@ heytabbycloud/
 
 | # | Regel |
 |---|---|
-| S1 | **TLS überall.** Das Gerät prüft das Server-Zertifikat (CA gepinnt). Kein unverschlüsseltes WS, auch nicht „nur zum Testen“ im Deployment. |
+| S1 | **TLS überall.** Das Gerät prüft das Broker-Zertifikat (ESP-IDF-Zertifikats-Bundle). MQTT ohne TLS nur im internen Docker-Netz, nie nach außen. |
 | S2 | **Das Gerät öffnet keine Ports.** Keine lokale HTTP-API im Cloud-Modus, nur ausgehende Verbindungen. |
-| S3 | **Token pro Gerät**, widerrufbar in der Web-App. Tokens liegen in der DB nur als Hash. Ein Gerät darf nur seinen eigenen Kanal nutzen. |
+| S3 | **Eigener Zugang pro Gerät** (`device_id` + `device_secret`), widerrufbar in der Web-App. Das Secret wird nur einmal ausgegeben und liegt im Broker nur als Hash. ACL: Ein Gerät darf nur `devices/<eigene-id>/…` nutzen. |
 | S4 | **Das Gerät führt nur Befehle aus einer festen Liste aus** (Abschnitt 5.3). Befehle werden gegen das Schema validiert, alles andere wird verworfen. Es gibt keinen „beliebigen Code/Text ausführen“-Befehl. |
-| S5 | **Pairing-Codes**: 5 min TTL, nur einmal gültig, Rate-Limit pro IP und Konto |
-| S6 | **OTA nur signiert** (SHA-256 + Signatur), mit A/B-Partition und automatischem Rollback |
+| S5 | **Geräte-Secret** nur im Browser-Speicher während des Flashens, nie in `localStorage`, nie geloggt. **WLAN-Passwort** geht nur per USB ans Gerät, nie an den Server. |
+| S6 | **Firmware nur aus unserem CI**, mit SHA-256-Prüfung vor dem Flashen. Falls OTA kommt: nur signiert, mit A/B-Partition und Rollback. |
 | S7 | **Web-Sicherheit**: Session-Cookies `HttpOnly`/`Secure`/`SameSite`, CSRF-Schutz, strenge CSP, Rate-Limits auf Login und API |
 | S8 | **Secrets** (API-Keys, DB-Passwort) nur als Env-Variablen auf dem Server, **nie** im Repo oder in der Firmware. Ein Secret-Scan im CI ist Pflicht. |
 | S9 | Server-Härtung: nur die Ports 22 (Key-only), 80 und 443; automatische Sicherheitsupdates; Firewall |
@@ -265,7 +239,7 @@ heytabbycloud/
 | H3 | **Offline-Modus**: Timer mit absoluter Endzeit laufen lokal weiter. Das Gerät zeigt dezent „offline“ an und stürzt nicht ab. |
 | H4 | **Stromversorgung**: nur ordentliche 5-V-USB-Netzteile. Bei Akkubetrieb nur geschützte Zellen, kein Laden unbeaufsichtigt im Gehäuse ohne Belüftung. |
 | H5 | **Rate-Limit für Gerätebefehle** (z. B. max. 5 Befehle pro Sekunde), damit die Web-App oder die KI das Gerät nicht „spammen“ kann |
-| H6 | Werksreset per Touch-Geste beim Booten. Er löscht WLAN-Daten und Token. |
+| H6 | Werksreset: WLAN-Daten löschen (upstream `WIFI_FORGET`) und in der Web-App entkoppeln (widerruft den Zugang). |
 
 ### 7.5 Lizenz & Marke
 
@@ -304,7 +278,7 @@ heytabbycloud/
 |---|---|---|
 | **0 – Hardware-Bring-up** | Board kaufen, Original-Firmware flashen, Gehäuse drucken | Animation läuft auf dem Gerät |
 | **1 – Cloud-Skelett** | VPS, Compose, Caddy, API mit Health-Check, DB, Login | `https://<domain>` erreichbar, Login funktioniert |
-| **2 – Gerät online** | `cloud_client` in der Firmware, Improv-WLAN, Pairing, `hello`/`heartbeat`, `animation.play` | Klick im Browser → Animation am Gerät (< 300 ms) |
+| **2 – Gerät online** | Mosquitto, Firmware-Fork (FW-1…FW-5), Einrichtungs-Assistent, Director-Grundgerüst | Klick im Browser → Animation am Gerät (< 300 ms) |
 | **3 – Produktiv-MVP** | Aufgaben, Fokus-Timer, Erinnerungen, Touch-Gesten, Simulator | Tabby ist im Alltag nutzbar |
 | **4 – KI** | Chat mit Tool-Use, Tagesplanung, Kostendeckel | „Leg mir drei Aufgaben für morgen an“ funktioniert |
 | **5 – Extras** | Notizen, Habits, Push-to-Talk, OTA, Kalender, Statistiken | nach Lust und Laune |
@@ -313,11 +287,13 @@ heytabbycloud/
 
 ## 9. Offene Entscheidungen
 
-1. **Frontend-Framework**: SvelteKit (leichtgewichtig) oder Next.js (größeres Ökosystem)?
-2. **Hosting**: VPS (empfohlen) oder Serverless (Cloudflare)?
-3. **KI-Anbieter**: Cloud-API (günstig, einfach) oder selbst gehostetes Modell (privater, aber teuer)?
-4. **Board**: 1,64" rechteckig (empfohlen, mehr Animationen) oder 1,32" rund?
-5. **Domain** für die Web-App?
+Vorläufig entschieden (siehe [ADR-0003](adr/0003-stack.md), änderbar bis Phase 1):
+SvelteKit · VPS mit Docker Compose · Claude API · Board 1,64" V1 · MQTT/Mosquitto.
+
+Noch offen:
+1. **Domain** für Web-App und Broker (`tabby.<domain>`, `mqtt.<domain>`)
+2. **KI-Modell**: `claude-opus-5` (Standard) oder günstiger (`claude-sonnet-5`/`claude-haiku-4-5`), am besten nach einer Woche Kostenmessung entscheiden
+3. **Gehäuse-Druck**: eigener Drucker, Makerspace oder Druckdienst?
 
 ---
 
@@ -325,4 +301,5 @@ heytabbycloud/
 
 - [Hey Taby: Website](https://www.heytaby.com/) · [Setup](https://www.heytaby.com/setup) · [Modelle](https://www.heytaby.com/models) · [Physical Taby / DIY](https://www.heytaby.com/diy-kit)
 - [TRIIIS-LABS/firmware-taby](https://github.com/TRIIIS-LABS/firmware-taby) (Firmware, Animationen, Gehäuse, Lizenzhinweise)
-- [ESP Web Tools](https://esphome.github.io/esp-web-tools/) · [Improv WiFi](https://www.improv-wifi.com/)
+- [esptool-js](https://github.com/espressif/esptool-js) · [Web Serial API](https://developer.mozilla.org/docs/Web/API/Web_Serial_API) · [Mosquitto Dynamic Security](https://mosquitto.org/documentation/dynamic-security/)
+- [Waveshare ESP32-S3-Touch-AMOLED-1.64](https://www.waveshare.com/esp32-s3-touch-amoled-1.64.htm)
