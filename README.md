@@ -1,0 +1,7 @@
+# Hey Tabby Cloud
+
+Privater Nachbau von [Hey Taby](https://www.heytaby.com/) als Cloud- und Web-Version: Die App läuft im Browser, das physische Tabby (ESP32-S3 AMOLED) verbindet sich per WLAN direkt mit der Cloud. Auf dem PC wird nichts installiert.
+
+- 📄 [Konzept, Features & Guardrails](docs/KONZEPT.md)
+
+> Taby-Artwork © Hey Taby / TRIIIS LABS. Die Nutzung ist nur privat und gemäß den Bedingungen im [Firmware-Repo](https://github.com/TRIIIS-LABS/firmware-taby) erlaubt.
