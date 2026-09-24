@@ -298,6 +298,8 @@ heytabbycloud/
 
 ## 8. Roadmap
 
+> Details: [FEATURES.md](FEATURES.md) (Feature-Katalog) und [BAUPLAN.md](BAUPLAN.md) (Arbeitsschritte je Phase).
+
 | Phase | Ziel | Ergebnis / „Done“ |
 |---|---|---|
 | **0 – Hardware-Bring-up** | Board kaufen, Original-Firmware flashen, Gehäuse drucken | Animation läuft auf dem Gerät |
