@@ -95,7 +95,7 @@ Keyframe-Felder (flach, ohne `pose`): `t`, `ease`, `x`, `y` (Mittelpunkt, Bildsc
 Klassische Formen: Klassische Cartoon-Handschuhe: **drei pummelige Finger und ein Daumen**, runde Handfläche, kleine ausgestellte Stulpe mit Falten, etwa 90 px hoch bei `scale` 1 (in Szenen mit Gegenständen oft 0,85).
 - `variant`: `filled` (Standard, weißer Handschuh mit dünnen schwarzen Innenlinien) oder `outline` (weiße Kontur auf Schwarz wie die Handschuhe im Original)
 - `variant: "sprite"`: **handgezeichnete Hände** aus `animations/assets/hands/*.png` (ausgeschnitten mit `scripts/extract_hand_sprites.py` aus einer eigenen Zeichnung). Fehlt die Zeichnung für eine Form, wird die programmierte Hand verwendet. Zusätzliche Form `rock` (Zeigefinger und kleiner Finger).
-- `arm`: optionale Länge (px) eines Gummischlauch-Arms unter der Stulpe, z. B. wenn die Hand von unten ins Bild greift
+- `arm`: optionaler Gummischlauch-Arm. Bei gezeichneten Händen (`sprite`) läuft er als Kurve von der Stulpe zu einem festen Schulterpunkt unterhalb des Bildrands (Wert = Reichweite, z. B. 220). So liest sich die Stulpe auch bei gedrehter Hand als Handgelenk und nicht als loser Finger.
 
 **Gegenstände:**
 
