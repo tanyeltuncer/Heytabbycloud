@@ -141,7 +141,8 @@
           "rot": -10,
           "shape": "fist",
           "variant": "sprite",
-          "scale": 0.72
+          "scale": 0.72,
+          "arm": 220
         },
         {
           "t": 0.65,

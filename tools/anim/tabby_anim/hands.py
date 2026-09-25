@@ -220,6 +220,7 @@ HAND_STYLES = ("filled", "outline", "sprite")
 # cut out of the user's own drawing with scripts/extract_hand_sprites.py.
 # Directory: $TABBY_HAND_SPRITES or <repo>/animations/assets/hands.
 SPRITE_HEIGHT = 92.0
+SPRITE_ARM_COLOR = (150, 150, 150)  # the drawing's dark arms would vanish on the black display
 _sprite_cache: dict[str, object] = {}
 
 
@@ -253,6 +254,22 @@ def has_back(shape: str) -> bool:
     return any(len(p) > 2 and p[2] == "back" for p in GLOVES.get(shape, ([], []))[0])
 
 
+def _rubber_arm(cv: Canvas, xf: Xf, arm: float) -> None:
+    """Bendy arm from the wrist to a fixed 'shoulder' below the screen edge. It leaves the
+    cuff along the hand's own axis and then curves down, so it never sticks out stiffly."""
+    wrist = xf((0, SPRITE_HEIGHT * 0.42))
+    below = xf((0, SPRITE_HEIGHT * 0.42 + 40))
+    side = -1 if xf.mirror else 1
+    shoulder = (xf.x + side * arm * 0.35, 280 + arm * 0.5)
+    pts = []
+    for i in range(17):
+        u = i / 16
+        pts.append(((1 - u) ** 2 * wrist[0] + 2 * (1 - u) * u * below[0] + u * u * shoulder[0],
+                    (1 - u) ** 2 * wrist[1] + 2 * (1 - u) * u * below[1] + u * u * shoulder[1]))
+    cv.polyline(pts, 17 * xf.scale, BLACK)
+    cv.polyline(pts, 13 * xf.scale, SPRITE_ARM_COLOR)
+
+
 def draw_hand(cv: Canvas, xf: Xf, shape: str, variant: str = "", arm: float = 0.0, which: str = "all") -> None:
     """which: "all", or "back"/"front" for grips that wrap around an item."""
     if shape not in GLOVES:
@@ -264,6 +281,8 @@ def draw_hand(cv: Canvas, xf: Xf, shape: str, variant: str = "", arm: float = 0.
         img = load_sprite(shape)
         if img is not None:
             if which in ("all", "front"):
+                if arm > 1:  # rubber-hose arm: makes the cuff read as a wrist, not a loose lump
+                    _rubber_arm(cv, xf, arm)
                 cv.sprite(img, xf, SPRITE_HEIGHT)
             return
         style = "filled"  # no drawing for this shape: fall back to the procedural glove
