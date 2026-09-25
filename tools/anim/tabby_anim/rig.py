@@ -24,7 +24,7 @@ from dataclasses import dataclass, field, fields
 from PIL import Image, ImageDraw
 
 from .gif import FPS, LANDSCAPE
-from .hands import GLOVES, HAND_SHAPES, draw_hand
+from .hands import GLOVES, HAND_SHAPES, draw_hand, has_back
 from .props import PROPS
 from .shapes import (BLACK, BLUE, BLUE_LIGHT, GOLD, MOUTH_RED, PINK, RED, SS, WHITE, Canvas, Xf, drop_points,
                      heart_points, lerp_color, star_points)
@@ -305,13 +305,37 @@ def _track_xf(track: Track, states: dict[str, dict], tracks_by_name: dict[str, T
     return xf, st
 
 
-def _draw_track(cv: Canvas, track: Track, xf: Xf, st: dict, t: float) -> None:
+def _draw_track(cv: Canvas, track: Track, xf: Xf, st: dict, t: float, which: str = "all") -> None:
     if xf.scale <= 0.02:
         return
     if track.type == "hand":
-        draw_hand(cv, xf, st["shape"], st["variant"], st["arm"])
+        draw_hand(cv, xf, st["shape"], st["variant"], st["arm"], which)
     else:
         PROPS[track.type](cv, xf, st["progress"], t, st["variant"])
+
+
+def _draw_order(placed: list[tuple]) -> list[tuple]:
+    """List order, except that a gripping hand is split: its back part is drawn at its
+    own position, its front part right after the last item attached to it, so the
+    item sits between palm and fingers."""
+    ops: list[tuple] = []
+    deferred: dict[str, tuple] = {}
+    last_child = {}
+    for i, (tr, _, _) in enumerate(placed):
+        if tr.attach_to:
+            last_child[tr.attach_to] = i
+    for i, (tr, xf, st) in enumerate(placed):
+        if tr.type == "hand" and tr.name in last_child and has_back(st["shape"]) and last_child[tr.name] > i:
+            ops.append((tr, xf, st, "back"))
+            deferred[tr.name] = (tr, xf, st, "front")
+        else:
+            ops.append((tr, xf, st, "all"))
+        for name, op in list(deferred.items()):
+            if last_child.get(name) == i:
+                ops.append(op)
+                del deferred[name]
+    ops.extend(deferred.values())
+    return ops
 
 
 def render_frame(anim: Animation, t: float) -> Image.Image:
@@ -322,13 +346,12 @@ def render_frame(anim: Animation, t: float) -> Image.Image:
     by_name = {tr.name: tr for tr in anim.tracks if tr.name}
     states: dict[int, dict] = {}
     placed = [(tr, *_track_xf(tr, states, by_name, t)) for tr in anim.tracks]
-    for tr, xf, st in placed:
-        if tr.layer == "back":
-            _draw_track(cv, tr, xf, st, t)
-    _face(cv, draw, pose_at(anim.keyframes, t), t, anim.duration_s, anim.loop)
-    for tr, xf, st in placed:
-        if tr.layer != "back":
-            _draw_track(cv, tr, xf, st, t)
+    for layer in ("back", "front"):
+        ops = _draw_order([p for p in placed if (p[0].layer == "back") == (layer == "back")])
+        for tr, xf, st, which in ops:
+            _draw_track(cv, tr, xf, st, t, which)
+        if layer == "back":
+            _face(cv, draw, pose_at(anim.keyframes, t), t, anim.duration_s, anim.loop)
     return img.resize((W, H), Image.Resampling.LANCZOS)
 
 

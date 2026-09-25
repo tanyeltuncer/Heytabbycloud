@@ -66,7 +66,8 @@ def bulb(base: Pt, angle: float, length: float, wb: float, wt: float, bend: floa
     return right + cap + left[::-1]
 
 
-def blob(cx: float, cy: float, rx: float, ry: float, taper: float = 0.0, power: float = 2.4, n: int = 48) -> list[Pt]:
+def blob(cx: float, cy: float, rx: float, ry: float, taper: float = 0.0, power: float = 2.4, n: int = 48,
+         rot: float = 0.0) -> list[Pt]:
     """Soft superellipse; taper > 0 narrows the lower half (towards the wrist)."""
     pts = []
     for i in range(n):
@@ -76,6 +77,9 @@ def blob(cx: float, cy: float, rx: float, ry: float, taper: float = 0.0, power: 
         y = ry * math.copysign(abs(s) ** (2 / power), s)
         if y > 0:
             x *= 1 - taper * (y / ry)
+        if rot:
+            a = math.radians(rot)
+            x, y = x * math.cos(a) - y * math.sin(a), x * math.sin(a) + y * math.cos(a)
         pts.append((cx + x, cy + y))
     return pts
 
@@ -173,12 +177,61 @@ GLOVES: dict[str, tuple[list[tuple[list[Pt], bool]], list[list[Pt]]]] = {
     ),
 }
 
+# Grips: the held item sits between the layers. Parts tagged "back" are drawn
+# behind the item, the rest in front of it. The item centre is at GRIP_CENTER
+# in hand coordinates (attach the item there, e.g. a glass at x=0, y=-34).
+GRIP_CENTER = (0.0, -34.0)
+
+# Seen from the front: the back of the hand peeks out behind the glass on the
+# right, three fingers wrap across the front, the thumb rests on top of them.
+GLOVES["grip"] = (
+    [(blob(24, -34, 16, 21, rot=-8), False, "back"),
+     (blob(31, -9, 13, 7, rot=-30), True, "back"),
+     # fingertips narrow towards the far edge: they curve away around the glass
+     (bulb((30, -45), -91, 34, 14, 11.5, -0.05), True),
+     (bulb((31, -31), -90, 37, 14.5, 12, -0.06), True),
+     (bulb((30, -17), -89, 34, 14, 11.5, -0.06), True),
+     (bulb((33, -52), -104, 22, 13, 14, -0.04), True)],
+    [arc(22, -45, 4.5, 110, 250, 5), arc(22, -31, 4.5, 110, 250, 5), arc(22, -17, 4.5, 110, 250, 5)],
+)
+# Held from behind: only the thumb comes round the front of the item; the
+# fingers stay hidden behind it (drawing them would look wrong).
+GLOVES["grip_behind"] = (
+    [(blob(24, -30, 16, 21, rot=-8), False, "back"),
+     (bulb((30, -26), -90, 30, 13.5, 14, -0.05), True, "back"),
+     (blob(31, -5, 13, 7, rot=-30), True, "back"),
+     (bulb((33, -46), -100, 26, 13, 12, -0.05), True)],
+    [],
+)
+# Edge-on (little-finger side towards the viewer): one finger and the thumb tip show.
+GLOVES["side"] = (
+    [(bulb((2, -12), 0, 36, 15, 17, 0.02), True),
+     (blob(1, 3, 14, 20, taper=0.15), False),
+     (bulb((-8, 2), -40, 18, 11, 12.5, 0.05), True),
+     (CUFF_SIDE := blob(1, 26, 10, 8, power=2.2), True)],
+    [[(3, -4), (3, 8)]],
+)
+
 HAND_SHAPES = sorted(GLOVES)
 HAND_STYLES = ("filled", "outline")
 ARM_COLOR = (120, 120, 120)
 
 
-def draw_hand(cv: Canvas, xf: Xf, shape: str, variant: str = "", arm: float = 0.0) -> None:
+def _parts(shape: str, which: str) -> list[tuple[list[Pt], bool]]:
+    out = []
+    for part in GLOVES[shape][0]:
+        layer = part[2] if len(part) > 2 else "front"
+        if which == "all" or layer == which:
+            out.append((part[0], part[1]))
+    return out
+
+
+def has_back(shape: str) -> bool:
+    return any(len(p) > 2 and p[2] == "back" for p in GLOVES.get(shape, ([], []))[0])
+
+
+def draw_hand(cv: Canvas, xf: Xf, shape: str, variant: str = "", arm: float = 0.0, which: str = "all") -> None:
+    """which: "all", or "back"/"front" for grips that wrap around an item."""
     if shape not in GLOVES:
         raise ValueError(f"unknown hand shape '{shape}', use one of {HAND_SHAPES}")
     style = variant or "filled"
@@ -187,9 +240,11 @@ def draw_hand(cv: Canvas, xf: Xf, shape: str, variant: str = "", arm: float = 0.
     fill, line = (WHITE, BLACK) if style == "filled" else (BLACK, WHITE)
     outer = 2.4 * xf.scale  # contour around the whole hand
     inner = 1.3 * xf.scale  # thin inner lines, like ink lines in the reference style
-    parts, creases = GLOVES[shape]
+    parts = _parts(shape, which)
+    creases = GLOVES[shape][1] if which in ("all", "front") else []
+    grip = shape.startswith("grip")
 
-    if arm > 1:  # optional rubber-hose arm below the cuff
+    if arm > 1 and which in ("all", "back"):  # optional rubber-hose arm below the cuff
         pts = [xf((1 + 5 * math.sin(i / 8 * math.pi / 2), 36 + arm * i / 8)) for i in range(9)]
         cv.polyline(pts, 8 * xf.scale, ARM_COLOR if style == "filled" else lerp_color(WHITE, BLACK, 0.3))
 
@@ -199,5 +254,6 @@ def draw_hand(cv: Canvas, xf: Xf, shape: str, variant: str = "", arm: float = 0.
         if sep:
             _prim(cv, xf, ("poly", outline), inner, line)
         _prim(cv, xf, ("poly", outline), 0.0, fill)
-    for pts in CUFF_LINES + creases:
+    cuff_lines = [] if grip or shape == "side" or which == "front" else CUFF_LINES
+    for pts in cuff_lines + creases:
         cv.polyline([xf(p) for p in pts], 1.7 * xf.scale, line)

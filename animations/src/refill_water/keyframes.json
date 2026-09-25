@@ -115,44 +115,90 @@
       ]
     },
     {
-      "type": "bottle",
-      "name": "bottle",
+      "type": "hand",
+      "name": "hand",
+      "side": "right",
       "keyframes": [
         {
           "t": 0.0,
-          "x": -70,
-          "y": -80,
+          "x": -52.3,
+          "y": -41.9,
           "rot": -25,
-          "progress": 1.0
+          "shape": "grip",
+          "scale": 1.0
         },
         {
           "t": 1.0,
-          "x": 205,
-          "y": 95,
-          "rot": 0,
+          "x": 205.0,
+          "y": 137.0,
+          "rot": 0.0,
           "ease": "out"
         },
         {
           "t": 1.5,
-          "rot": -115,
+          "x": 243.1,
+          "y": 77.3,
+          "rot": -115.0,
           "ease": "inOut"
         },
         {
           "t": 3.4,
-          "rot": -120,
-          "progress": 0.3,
+          "x": 241.4,
+          "y": 74.0,
+          "rot": -120.0,
           "ease": "linear"
         },
         {
           "t": 3.8,
-          "rot": -10,
+          "x": 212.3,
+          "y": 136.4,
+          "rot": -10.0,
           "ease": "inOut"
         },
         {
           "t": 4.4,
-          "x": -80,
-          "y": -90,
-          "rot": -30,
+          "x": -59.0,
+          "y": -53.6,
+          "rot": -30.0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "type": "bottle",
+      "name": "bottle",
+      "attach_to": "hand",
+      "keyframes": [
+        {
+          "t": 0.0,
+          "x": 0,
+          "y": -42,
+          "rot": 0,
+          "progress": 1.0
+        },
+        {
+          "t": 1.0,
+          "progress": 1.0,
+          "ease": "out"
+        },
+        {
+          "t": 1.5,
+          "progress": 1.0,
+          "ease": "inOut"
+        },
+        {
+          "t": 3.4,
+          "progress": 0.30000000000000004,
+          "ease": "linear"
+        },
+        {
+          "t": 3.8,
+          "progress": 0.3,
+          "ease": "inOut"
+        },
+        {
+          "t": 4.4,
+          "progress": 0.3,
           "ease": "in"
         }
       ]
@@ -184,21 +230,6 @@
           "t": 3.6,
           "progress": 2,
           "ease": "in"
-        }
-      ]
-    },
-    {
-      "type": "hand",
-      "side": "right",
-      "attach_to": "bottle",
-      "keyframes": [
-        {
-          "t": 0.0,
-          "x": 25,
-          "y": 12,
-          "rot": -90,
-          "shape": "hold",
-          "scale": 1.0
         }
       ]
     }

@@ -88,10 +88,12 @@ Hintergrund und Stilguide: `docs/spec/animationen.md`. Parameter-Referenz: `tool
 
 Vollständige Referenz: `tools/anim/README.md` → „Hände und Gegenstände“. Den Katalog aller Teile erzeugst du mit `python -m tabby_anim catalog --out ../../dist/catalog.png`. Sieh ihn dir an, bevor du Teile auswählst.
 
-- **Hände** `type: "hand"`, `side` left/right, `shape`: `open`, `fist`, `point`, `thumbs_up`, `peace`, `hold`. Klassische weiße Cartoon-Handschuhe mit drei Fingern und Daumen, ca. 90 px hoch; in Szenen mit Gegenständen `scale` 0,8–0,9. `variant: "outline"` für den Umriss-Stil des Originals, `arm` (px) für einen Gummischlauch-Arm.
+- **Hände** `type: "hand"`, `side` left/right, `shape`: `open`, `fist`, `point`, `thumbs_up`, `peace`, `hold`, `side`, `grip`, `grip_behind`. Klassische weiße Cartoon-Handschuhe mit drei Fingern und Daumen, ca. 90 px hoch; in Szenen mit Gegenständen `scale` 0,8–0,9. `variant: "outline"` für den Umriss-Stil des Originals, `arm` (px) für einen Gummischlauch-Arm.
 - **Gegenstände**: `water_glass`, `bottle`, `water_stream`, `water_drop`, `fireworks`, `book`, `checklist`, `coffee`, `heart`, `sparkle`, `star`, `trophy`, `clock`, `zzz` (Bedeutung von `progress` und `variant` in der README)
 - Keyframe-Felder flach: `t`, `ease`, `x`, `y`, `rot`, `scale`, `show`, `progress`, `shape`, `variant`, `arm`
-- **Halten**: Gegenstand mit `attach_to: "<name der hand>"` an die Hand hängen, Position dann relativ, z. B. Glas `y: -62` über der `hold`-Hand. Den Gegenstand **vor** der Hand in die Liste schreiben, damit die Finger vorne liegen.
+- **Umgreifen (bevorzugt für Glas, Flasche, Tasse):** `shape: "grip"`. Die Hand kommt **zuerst** in die Liste (mit `name`), der Gegenstand danach mit `attach_to` auf die Hand bei `x: 0, y: -34` (tiefer, z. B. `-54`, greift weiter unten; dann bleibt der Füllstand sichtbar). Das Rig legt die Handfläche automatisch hinter und die Finger vor den Gegenstand. Soll ein Gegenstand eine Hand bewegen (Flasche wird gekippt), bewegt man die **Hand** und hängt den Gegenstand daran (Beispiel `refill_water`).
+- **Finger weglassen, wo sie verdeckt wären:** von hinten gehalten → `grip_behind` (nur der Daumen vorne); Handkante zum Betrachter → `side`. Zeig nicht immer die ganze Hand, sondern das, was man aus diesem Blickwinkel sähe.
+- **Auflegen/Tragen ohne Umgreifen:** `hold`, Gegenstand vor der Hand in der Liste.
 - **Auftritt**: `show` 0 → 1 mit `ease: "back"`; vorher `show: 0` setzen. Abgang: aus dem Bild fahren (`y` > 300) oder `show` → 0.
 
 **Das Gesicht ist beweglich.** Es muss nicht in der Mitte bleiben: Liegt der Gegenstand links, rückt das Gesicht nach rechts (`face_x` 100–135, `face_scale` 0,7–0,8) und dreht sich zum Gegenstand (`turn` −0,5 bis −0,7). Zum Abschluss dreht es sich wieder nach vorn (`turn` 0) und kehrt zur Mitte zurück, weil die Firmware danach in den Idle-Zustand geht (Beispiel `checklist_done`, `refill_water`).

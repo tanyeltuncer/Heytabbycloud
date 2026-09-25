@@ -217,5 +217,32 @@ class FaceLayoutAndLiquidTests(unittest.TestCase):
         self.assertGreater(lit, 60)
 
 
+class GripTests(unittest.TestCase):
+    def spec(self, shape):
+        return {"duration_s": 1, "loop": False, "keyframes": [{"t": 0}], "props": [
+            {"type": "hand", "name": "h", "keyframes": [{"t": 0, "x": 228, "y": 200, "shape": shape}]},
+            {"type": "water_glass", "attach_to": "h", "keyframes": [{"t": 0, "x": 0, "y": -34, "progress": 0.8}]}]}
+
+    def order(self, shape):
+        anim = rig.load_animation(self.spec(shape))
+        by = {t.name: t for t in anim.tracks if t.name}
+        placed = [(tr, *rig._track_xf(tr, {}, by, 0.0)) for tr in anim.tracks]
+        return [(tr.type, which) for tr, _, _, which in rig._draw_order(placed)]
+
+    def test_grip_puts_the_item_between_palm_and_fingers(self):
+        self.assertEqual(self.order("grip"), [("hand", "back"), ("water_glass", "all"), ("hand", "front")])
+        self.assertEqual(self.order("grip_behind"), [("hand", "back"), ("water_glass", "all"), ("hand", "front")])
+
+    def test_ordinary_hand_keeps_list_order(self):
+        self.assertEqual(self.order("open"), [("hand", "all"), ("water_glass", "all")])
+
+    def test_grip_fingers_cover_the_glass_front(self):
+        from PIL import ImageChops, ImageStat
+        a = rig.render_frame(rig.load_animation(self.spec("grip")), 0)
+        b = rig.render_frame(rig.load_animation(self.spec("grip_behind")), 0)
+        # fingers across the front make the two grips look clearly different over the glass
+        self.assertGreater(ImageStat.Stat(ImageChops.difference(a, b).crop((190, 140, 270, 200)).convert("L")).mean[0], 20)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -86,7 +86,13 @@ Zusätzlich zu `keyframes` (Gesicht) kann eine Animation Spuren für Hände und 
 
 Keyframe-Felder (flach, ohne `pose`): `t`, `ease`, `x`, `y` (Mittelpunkt, Bildschirm 456 × 280), `rot` (Grad, im Uhrzeigersinn), `scale`, `arm` (nur Hände), `show` (0 = unsichtbar; mit `ease: "back"` von 0 auf 1 ploppt es auf), `progress` (je Gegenstand, siehe unten), `shape` (Hände), `variant` (Farbe oder Modus). Die Zeichenreihenfolge folgt der Liste: Spätere Spuren liegen oben.
 
-**Hände** (`shape`): `open`, `fist`, `point`, `thumbs_up`, `peace`, `hold` (zum Halten). Klassische Cartoon-Handschuhe: **drei pummelige Finger und ein Daumen**, runde Handfläche, kleine ausgestellte Stulpe mit Falten, etwa 90 px hoch bei `scale` 1 (in Szenen mit Gegenständen oft 0,85).
+**Hände** (`shape`): `open`, `fist`, `point`, `thumbs_up`, `peace`, `hold`, `side` (Handkante zum Betrachter, nur ein Finger und die Daumenspitze sichtbar) sowie die **Griffe** `grip` und `grip_behind`.
+
+**Greifen (`grip`, `grip_behind`):** Die Hand wird in zwei Ebenen gezeichnet. Handrücken bzw. Handfläche liegen **hinter** dem Gegenstand, die Finger laufen **vorne** darum herum. Dafür: Hand-Spur mit `name` **zuerst** in die Liste, den Gegenstand mit `attach_to` auf die Hand bei `x: 0, y: -34` (Griffmitte; tiefer, z. B. `y: -54`, greift die Hand weiter unten). Bei `grip` liegen drei Finger und der Daumen vorne. Bei `grip_behind` ist nur der Daumen vorne zu sehen, die Finger bleiben verdeckt.
+
+**Nicht immer alle Finger zeigen:** Je nach Blickwinkel sind Finger verdeckt, durch den Gegenstand (`grip_behind`) oder durch die Hand selbst (`side`). Die Form passend zur Blickrichtung wählen, statt immer die ganze Hand zu zeigen.
+
+Klassische Formen: Klassische Cartoon-Handschuhe: **drei pummelige Finger und ein Daumen**, runde Handfläche, kleine ausgestellte Stulpe mit Falten, etwa 90 px hoch bei `scale` 1 (in Szenen mit Gegenständen oft 0,85).
 - `variant`: `filled` (Standard, weißer Handschuh mit dünnen schwarzen Innenlinien) oder `outline` (weiße Kontur auf Schwarz wie die Handschuhe im Original)
 - `arm`: optionale Länge (px) eines Gummischlauch-Arms unter der Stulpe, z. B. wenn die Hand von unten ins Bild greift
 

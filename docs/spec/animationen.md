@@ -118,7 +118,7 @@ Getestet und bewertet (Stand September 2026):
 
 **Teile-Katalog (umgesetzt):**
 - **9 Augenformen:** normal, `happy` (^ ^), `closed`, `angry`, `sad`, `squint` (> <), `heart`, `star`, `dizzy`, dazu Tränen, Schweiß und Wangen
-- **6 Handschuh-Hände** im klassischen Cartoon-Stil (drei Finger und Daumen, weiß gefüllt, dünne Innenlinien, Stulpe mit Falten): `open`, `fist`, `point`, `thumbs_up`, `peace`, `hold`, links und rechts, optional im Umriss-Stil des Originals und mit Gummischlauch-Arm
+- **6 Handschuh-Hände** im klassischen Cartoon-Stil (drei Finger und Daumen, weiß gefüllt, dünne Innenlinien, Stulpe mit Falten): `open`, `fist`, `point`, `thumbs_up`, `peace`, `hold`, links und rechts, optional im Umriss-Stil des Originals und mit Gummischlauch-Arm. Dazu kommen **Griffe in zwei Ebenen** (`grip`: Handfläche hinter, Finger vor dem Gegenstand; `grip_behind`: nur der Daumen vorne) und die Seitenansicht `side`. Finger, die aus dem Blickwinkel verdeckt wären, werden weggelassen.
 - **Gesicht beweglich:** `face_x`/`face_y`/`face_scale` und `turn` (Dreiviertelansicht, das Auge in Blickrichtung wird schmaler)
 - **14 Gegenstände:** Wasserglas (Füllstand mit waagerechter Oberfläche, auch gekippt), Flasche, Wasserstrahl, Tropfen, Feuerwerk (Rakete und Explosion), Buch (offen/zu, blättern), Checkliste (Häkchen nacheinander), Kaffee (mit Dampf), Herz, Funkeln, Stern, Pokal, Wecker (Zeiger), Zzz
 
