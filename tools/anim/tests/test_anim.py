@@ -244,5 +244,33 @@ class GripTests(unittest.TestCase):
         self.assertGreater(ImageStat.Stat(ImageChops.difference(a, b).crop((190, 140, 270, 200)).convert("L")).mean[0], 20)
 
 
+class SpriteHandTests(unittest.TestCase):
+    def test_sprite_style_uses_drawings_and_falls_back_without_them(self):
+        import os
+        import tempfile as tf
+        from PIL import Image as Img
+        from tabby_anim import hands
+        face = rig.Keyframe(0, {"eye_open": 0.0, "mouth_width": 1})
+
+        def render():
+            hands._sprite_cache.clear()
+            tr = rig.Track("hand", [rig.Keyframe(0, {"x": 228, "y": 140, "shape": "open", "variant": "sprite"})])
+            return rig.render_frame(rig.Animation([face], 1, False, [tr]), 0)
+
+        with tf.TemporaryDirectory() as d:
+            os.environ["TABBY_HAND_SPRITES"] = d
+            try:
+                fallback = render()  # no drawing -> procedural glove
+                self.assertEqual(fallback.getpixel((228, 140)), (255, 255, 255))
+                Img.new("RGBA", (40, 80), (255, 0, 0, 255)).save(Path(d) / "open.png")
+                drawn = render()
+                r, g, b = drawn.getpixel((228, 140))
+                self.assertGreater(r, 200)
+                self.assertLess(g, 60)  # the red test sprite is used
+            finally:
+                del os.environ["TABBY_HAND_SPRITES"]
+                hands._sprite_cache.clear()
+
+
 if __name__ == "__main__":
     unittest.main()

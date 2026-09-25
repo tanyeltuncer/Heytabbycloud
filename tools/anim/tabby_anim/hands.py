@@ -212,8 +212,31 @@ GLOVES["side"] = (
     [[(3, -4), (3, 8)]],
 )
 
+GLOVES["rock"] = GLOVES["peace"]  # procedural stand-in; the drawn sprite shows index + little finger
 HAND_SHAPES = sorted(GLOVES)
-HAND_STYLES = ("filled", "outline")
+HAND_STYLES = ("filled", "outline", "sprite")
+
+# Hand-drawn sprites (style "sprite"): transparent PNGs named after the shape,
+# cut out of the user's own drawing with scripts/extract_hand_sprites.py.
+# Directory: $TABBY_HAND_SPRITES or <repo>/animations/assets/hands.
+SPRITE_HEIGHT = 92.0
+_sprite_cache: dict[str, object] = {}
+
+
+def sprite_dir():
+    import os
+    from pathlib import Path
+    env = os.environ.get("TABBY_HAND_SPRITES")
+    return Path(env) if env else Path(__file__).resolve().parents[3] / "animations" / "assets" / "hands"
+
+
+def load_sprite(shape: str):
+    path = sprite_dir() / f"{shape}.png"
+    key = str(path)
+    if key not in _sprite_cache:
+        from PIL import Image
+        _sprite_cache[key] = Image.open(path).convert("RGBA") if path.exists() else None
+    return _sprite_cache[key]
 ARM_COLOR = (120, 120, 120)
 
 
@@ -237,6 +260,13 @@ def draw_hand(cv: Canvas, xf: Xf, shape: str, variant: str = "", arm: float = 0.
     style = variant or "filled"
     if style not in HAND_STYLES:
         raise ValueError(f"unknown hand style '{style}', use one of {HAND_STYLES}")
+    if style == "sprite":
+        img = load_sprite(shape)
+        if img is not None:
+            if which in ("all", "front"):
+                cv.sprite(img, xf, SPRITE_HEIGHT)
+            return
+        style = "filled"  # no drawing for this shape: fall back to the procedural glove
     fill, line = (WHITE, BLACK) if style == "filled" else (BLACK, WHITE)
     outer = 2.4 * xf.scale  # contour around the whole hand
     inner = 1.3 * xf.scale  # thin inner lines, like ink lines in the reference style

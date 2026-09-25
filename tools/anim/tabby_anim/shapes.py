@@ -66,6 +66,20 @@ class Canvas:
 
     def __init__(self, draw: ImageDraw.ImageDraw):
         self.d = draw
+        self.img = draw._image  # the supersampled target image, for pasting sprites
+
+    def sprite(self, img, xf: "Xf", height: float) -> None:
+        """Paste an RGBA sprite centred on the transform origin, `height` logical px tall at xf.scale 1."""
+        from PIL import Image
+        k = height * xf.scale * SS / img.height
+        if k <= 0:
+            return
+        s = img.resize((max(1, round(img.width * k)), max(1, round(img.height * k))), Image.Resampling.LANCZOS)
+        if xf.mirror:
+            s = s.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+        if xf.rot:
+            s = s.rotate(-xf.rot, resample=Image.Resampling.BICUBIC, expand=True)
+        self.img.paste(s, (round(xf.x * SS - s.width / 2), round(xf.y * SS - s.height / 2)), s)
 
     @staticmethod
     def _p(p: Point) -> tuple[float, float]:
