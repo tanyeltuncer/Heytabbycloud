@@ -1,0 +1,7 @@
+{
+  "id": "refill_water",
+  "label": "REFILL",
+  "max_colors": 12,
+  "max_kb": 220,
+  "prompt": "Eine Flasche f\u00fcllt ein leeres Glas mit Wasser auf. Tabby r\u00fcckt zur Seite, schaut dem Wasserstrahl gespannt zu und freut sich, wenn das Glas voll ist."
+}

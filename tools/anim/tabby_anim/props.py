@@ -12,7 +12,7 @@ from __future__ import annotations
 import math
 
 from .shapes import (BLACK, BLUE, BLUE_LIGHT, BROWN, BROWN_DARK, CREAM, GOLD, GOLD_DARK, GREEN, GREY, NAMED_COLORS,
-                     PINK, RED, WHITE, Canvas, Xf, draw_figure, drop_points, heart_points, lerp_color, rounded_rect,
+                     PINK, RED, WHITE, Canvas, Xf, draw_figure, draw_liquid, drop_points, heart_points, lerp_color, rounded_rect,
                      star_points)
 
 
@@ -22,18 +22,49 @@ def _ease_out(x: float) -> float:
 
 
 def water_glass(cv: Canvas, xf: Xf, progress: float, t: float, variant: str) -> None:
-    """progress = water level 0 (empty) .. 1 (full)."""
+    """progress = water level 0 (empty) .. 1 (full). The surface stays level when tilted."""
     top, bottom, wt, wb = -36, 34, 26, 20
-    level = min(1.0, max(0.0, progress))
     cv.poly([xf(p) for p in [(-wt, top), (wt, top), (wb, bottom), (-wb, bottom)]], BLACK)
-    if level > 0.01:
-        wy = bottom - (bottom - top - 6) * level
-        wx = wb + (wt - wb) * (bottom - wy) / (bottom - top)
-        cv.poly([xf(p) for p in [(-wx + 3, wy), (wx - 3, wy), (wb - 3, bottom - 3), (-wb + 3, bottom - 3)]], BLUE)
-        cv.capsule(xf((-wx + 6, wy + 2)), xf((wx - 6, wy + 2)), xf.r(2), BLUE_LIGHT)
-        cv.capsule(xf((-wb + 3, bottom - 12)), xf((-wx + 8, wy + 10)), xf.r(2.5), BLUE_LIGHT)
+    interior = [xf(p) for p in [(-wt + 3, top + 2), (wt - 3, top + 2), (wb - 3, bottom - 3), (-wb + 3, bottom - 3)]]
+    draw_liquid(cv, interior, progress, BLUE, BLUE_LIGHT)
+    if progress > 0.15:  # glint on the glass wall
+        cv.capsule(xf((-wb + 5, bottom - 12)), xf((-wt + 9, top + 14)), xf.r(2.2), lerp_color(BLUE_LIGHT, BLACK, 0.2))
     cv.polyline([xf(p) for p in [(-wt, top), (-wb, bottom), (wb, bottom), (wt, top)]], xf.r(5), WHITE)
     cv.polyline([xf((-wt, top)), xf((wt, top))], xf.r(2.5), lerp_color(WHITE, BLACK, 0.3))
+
+
+BOTTLE_OUTLINE = [(-9, -64), (9, -64), (9, -44), (20, -30), (20, 46), (-20, 46), (-20, -30), (-9, -44)]
+
+
+def bottle(cv: Canvas, xf: Xf, progress: float, t: float, variant: str) -> None:
+    """Water bottle; progress = fill level 0..1 (surface stays level when tilted).
+    Its opening is at local (0, -64): attach a water_stream there for pouring."""
+    draw_figure(cv, xf, [("poly", BOTTLE_OUTLINE)], fill=lerp_color(BLUE, BLACK, 0.82), stroke=4)
+    inner = [(-6, -61), (6, -61), (6, -42), (17, -28), (17, 43), (-17, 43), (-17, -28), (-6, -42)]
+    draw_liquid(cv, [xf(p) for p in inner], progress, BLUE, BLUE_LIGHT)
+    label = NAMED_COLORS.get(variant, GREEN)
+    cv.poly([xf(p) for p in [(-20, 6), (20, 6), (20, 26), (-20, 26)]], label)
+    cv.capsule(xf((-13, -24)), xf((-13, 0)), xf.r(2.5), lerp_color(BLUE_LIGHT, BLACK, 0.3))
+
+
+def water_stream(cv: Canvas, xf: Xf, progress: float, t: float, variant: str) -> None:
+    """Falling water, always vertical (ignores rotation), ~100 px long at scale 1.
+    progress 0..1 the stream grows down from its origin, 1..2 its end falls away."""
+    p = max(0.0, progress)
+    if p <= 0.01 or p >= 1.99:
+        return
+    length = 100 * xf.scale
+    x0, y0 = xf.x, xf.y
+    head, tail = min(p, 1.0) * length, max(0.0, p - 1.0) * length
+    width = 3.2 * xf.scale
+    wob = 1.2 * math.sin(t * 25)
+    cv.capsule((x0, y0 + tail), (x0 + wob, y0 + head), width, BLUE)
+    if head - tail > 12:
+        cv.capsule((x0 - 1, y0 + tail + 4), (x0 - 1 + wob, y0 + head - 6), width * 0.35, BLUE_LIGHT)
+    if p >= 1.0 - 1e-6 or head >= length * 0.98:  # little splash at the bottom
+        for i, dx in enumerate((-9, 8)):
+            ph = (t * 3 + i * 0.27) % 1.0
+            cv.circle((x0 + dx * (0.5 + ph), y0 + length - 4 - 10 * math.sin(math.pi * ph)), 2.4 * xf.scale, BLUE_LIGHT)
 
 
 def water_drop(cv: Canvas, xf: Xf, progress: float, t: float, variant: str) -> None:
@@ -186,7 +217,7 @@ def zzz(cv: Canvas, xf: Xf, progress: float, t: float, variant: str) -> None:
         cv.polyline([xf(p) for p in pts], xf.r(3 + 1.5 * ph), col)
 
 PROPS = {
-    "water_glass": water_glass, "water_drop": water_drop, "fireworks": fireworks, "book": book,
+    "water_glass": water_glass, "bottle": bottle, "water_stream": water_stream, "water_drop": water_drop, "fireworks": fireworks, "book": book,
     "checklist": checklist, "coffee": coffee, "heart": heart, "sparkle": sparkle, "star": star,
     "trophy": trophy, "clock": clock, "zzz": zzz,
 }

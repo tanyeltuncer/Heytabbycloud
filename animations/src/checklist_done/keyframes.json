@@ -1,5 +1,5 @@
 {
-  "duration_s": 4.2,
+  "duration_s": 4.8,
   "loop": false,
   "keyframes": [
     {
@@ -9,81 +9,68 @@
       }
     },
     {
-      "t": 0.5,
+      "t": 0.6,
       "pose": {
-        "look_x": 14,
-        "look_y": 10,
-        "eye_open": 0.8,
+        "face_x": 118,
+        "face_scale": 0.78,
+        "face_y": -8,
+        "turn": -0.65,
+        "look_y": 4,
         "mouth_curve": 4,
-        "mouth_width": 70
+        "mouth_width": 72
       },
       "ease": "inOut"
     },
     {
-      "t": 1.1,
+      "t": 1.0,
       "pose": {
-        "bounce": -3
+        "look_y": 0
       }
     },
     {
-      "t": 1.3,
+      "t": 1.6,
       "pose": {
-        "bounce": 0
+        "look_y": 6
       }
     },
     {
-      "t": 1.7,
+      "t": 2.2,
       "pose": {
-        "bounce": -3
+        "look_y": 12
       }
     },
     {
-      "t": 1.9,
+      "t": 2.5,
       "pose": {
-        "bounce": 0
-      }
+        "eye_open": 1
+      },
+      "ease": "hold"
     },
     {
-      "t": 2.3,
+      "t": 2.8,
       "pose": {
-        "bounce": -3
-      }
-    },
-    {
-      "t": 2.7,
-      "pose": {
+        "turn": 0,
+        "face_x": 95,
         "eye_shape": "happy",
-        "look_x": 0,
         "look_y": 0,
-        "bounce": -10,
-        "squash": 0.92,
-        "mouth_open": 14,
+        "bounce": -8,
+        "mouth_open": 13,
         "mouth_width": 60,
         "blush": 1
       },
       "ease": "out"
     },
     {
-      "t": 3.0,
+      "t": 3.4,
       "pose": {
-        "bounce": 3,
-        "squash": 1.1
+        "bounce": 0
       },
-      "ease": "in"
+      "ease": "inOut"
     },
     {
-      "t": 3.3,
-      "pose": {
-        "bounce": 0,
-        "squash": 1.0
-      },
-      "ease": "back"
-    },
-    {
-      "t": 3.8,
+      "t": 4.1,
       "pose": {
         "eye_shape": "pill",
-        "eye_open": 1,
         "mouth_open": 0,
         "mouth_width": 94,
         "mouth_curve": 14
@@ -91,56 +78,67 @@
       "ease": "hold"
     },
     {
-      "t": 4.2,
+      "t": 4.8,
       "pose": {
+        "face_x": 0,
+        "face_y": 0,
+        "face_scale": 1.0,
         "blush": 0.3
-      }
+      },
+      "ease": "inOut"
     }
   ],
   "props": [
     {
       "type": "checklist",
-      "name": "board",
       "keyframes": [
         {
           "t": 0.0,
-          "x": 372,
-          "y": 330,
-          "scale": 0.85,
-          "rot": 8,
+          "x": -90,
+          "y": 150,
+          "scale": 1.3,
+          "rot": -6,
           "progress": 0
         },
         {
-          "t": 0.5,
-          "y": 238,
+          "t": 0.55,
+          "x": 105,
           "ease": "out"
         },
         {
-          "t": 0.7,
+          "t": 0.95,
           "progress": 0
         },
         {
-          "t": 1.1,
+          "t": 1.15,
           "progress": 1,
           "ease": "out"
         },
         {
-          "t": 1.7,
+          "t": 1.55,
+          "progress": 1
+        },
+        {
+          "t": 1.75,
           "progress": 2,
           "ease": "out"
         },
         {
-          "t": 2.3,
+          "t": 2.15,
+          "progress": 2
+        },
+        {
+          "t": 2.35,
           "progress": 3,
           "ease": "out"
         },
         {
-          "t": 3.6,
-          "y": 238
+          "t": 4.1,
+          "x": 105
         },
         {
-          "t": 4.2,
-          "y": 340,
+          "t": 4.7,
+          "x": -100,
           "ease": "in"
         }
       ]
@@ -148,71 +146,85 @@
     {
       "type": "hand",
       "side": "right",
-      "attach_to": "board",
       "keyframes": [
         {
           "t": 0.0,
-          "x": 34,
-          "y": 40,
-          "rot": 20,
-          "shape": "hold"
-        }
-      ]
-    },
-    {
-      "type": "sparkle",
-      "variant": "gold",
-      "keyframes": [
+          "x": 170,
+          "y": 330,
+          "rot": -50,
+          "shape": "point"
+        },
         {
-          "t": 0.0,
-          "x": 300,
-          "y": 150,
-          "show": 0
+          "t": 0.8,
+          "x": 148,
+          "y": 170,
+          "ease": "out"
+        },
+        {
+          "t": 0.95,
+          "x": 136,
+          "y": 157,
+          "ease": "in"
+        },
+        {
+          "t": 1.15,
+          "x": 146,
+          "y": 164,
+          "ease": "out"
+        },
+        {
+          "t": 1.55,
+          "x": 136,
+          "y": 183,
+          "ease": "in"
+        },
+        {
+          "t": 1.75,
+          "x": 146,
+          "y": 190,
+          "ease": "out"
+        },
+        {
+          "t": 2.15,
+          "x": 136,
+          "y": 209,
+          "ease": "in"
         },
         {
           "t": 2.35,
-          "show": 0
-        },
-        {
-          "t": 2.55,
-          "show": 1.2,
-          "rot": 45,
-          "ease": "back"
-        },
-        {
-          "t": 2.9,
-          "show": 0,
-          "rot": 90
-        }
-      ]
-    },
-    {
-      "type": "hand",
-      "side": "left",
-      "keyframes": [
-        {
-          "t": 0.0,
-          "x": 70,
-          "y": 245,
-          "rot": -10,
-          "shape": "thumbs_up",
-          "show": 0
+          "x": 148,
+          "y": 216,
+          "ease": "out"
         },
         {
           "t": 2.6,
-          "show": 0
+          "x": 250,
+          "y": 238,
+          "rot": -5,
+          "ease": "inOut"
         },
         {
-          "t": 2.9,
-          "show": 1,
-          "ease": "back"
+          "t": 2.7,
+          "shape": "thumbs_up",
+          "ease": "hold"
         },
         {
-          "t": 3.7,
-          "show": 1
+          "t": 2.95,
+          "scale": 1.15,
+          "ease": "out"
         },
         {
-          "t": 4.2,
+          "t": 3.2,
+          "scale": 1.0,
+          "ease": "inOut"
+        },
+        {
+          "t": 4.0,
+          "x": 250,
+          "y": 238
+        },
+        {
+          "t": 4.6,
           "y": 340,
           "ease": "in"
         }

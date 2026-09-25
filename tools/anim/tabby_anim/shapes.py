@@ -173,3 +173,50 @@ def drop_points(cx: float, cy: float, size: float, n: int = 24) -> list[Point]:
         a = math.radians(-30 + 240 * i / n)  # round bottom
         pts.append((cx + size * math.cos(a), cy + size * math.sin(a)))
     return pts
+
+
+# --- liquids ------------------------------------------------------------------
+# Liquid inside a (possibly rotated) container keeps a horizontal surface: we
+# clip the container interior in screen space below a horizontal line whose
+# height is solved so that the enclosed area matches the fill level.
+
+
+def poly_area(pts: list[Point]) -> float:
+    return abs(sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(pts, pts[1:] + pts[:1]))) / 2
+
+
+def clip_below(pts: list[Point], y: float) -> list[Point]:
+    """Part of the polygon with screen y >= y (below the line, since y grows downwards)."""
+    out: list[Point] = []
+    for a, b in zip(pts, pts[1:] + pts[:1]):
+        ina, inb = a[1] >= y, b[1] >= y
+        if ina:
+            out.append(a)
+        if ina != inb:
+            k = (y - a[1]) / (b[1] - a[1])
+            out.append((a[0] + (b[0] - a[0]) * k, y))
+    return out
+
+
+def draw_liquid(cv: Canvas, interior: list[Point], level: float, color, highlight=None) -> None:
+    """Fill `level` (0..1) of the interior polygon (screen coords) with a level surface."""
+    level = min(1.0, max(0.0, level))
+    if level <= 0.005 or len(interior) < 3:
+        return
+    total = poly_area(interior)
+    lo, hi = min(p[1] for p in interior), max(p[1] for p in interior)
+    for _ in range(30):  # binary search the surface height
+        mid = (lo + hi) / 2
+        if poly_area(clip_below(interior, mid)) / total > level:
+            lo = mid
+        else:
+            hi = mid
+    body = clip_below(interior, (lo + hi) / 2)
+    cv.poly(body, color)
+    if highlight is not None and level < 0.995:
+        surface = [p for p in body if abs(p[1] - (lo + hi) / 2) < 0.01]
+        if len(surface) >= 2:
+            xs = sorted(p[0] for p in surface)
+            y = (lo + hi) / 2 + 2
+            if xs[-1] - xs[0] > 8:
+                cv.capsule((xs[0] + 4, y), (xs[-1] - 4, y), 1.8, highlight)

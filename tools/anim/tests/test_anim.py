@@ -169,5 +169,53 @@ class PartsTests(unittest.TestCase):
                 self.assertLess(ImageStat.Stat(ImageChops.difference(a, b).convert("L")).mean[0], 1.0)
 
 
+
+class FaceLayoutAndLiquidTests(unittest.TestCase):
+    def test_default_layout_matches_measured_upstream_face(self):
+        lay = rig.face_layout(rig.Pose())
+        self.assertEqual([round(e["x"]) for e in lay["eyes"]], [112, 348])
+        self.assertAlmostEqual(lay["bottom"], 195)
+        self.assertAlmostEqual(lay["mouth"]["x"], 228)
+
+    def test_face_moves_and_scales(self):
+        lay = rig.face_layout(rig.Pose(face_x=100, face_scale=0.5))
+        xs = [e["x"] for e in lay["eyes"]]
+        self.assertAlmostEqual(sum(xs) / 2, 330)
+        self.assertAlmostEqual(xs[1] - xs[0], 118)  # spacing halves with the face
+
+    def test_turn_foreshortens_the_eye_in_turn_direction(self):
+        left_turn = rig.face_layout(rig.Pose(turn=-0.8))["eyes"]
+        self.assertLess(left_turn[0]["sw"], left_turn[1]["sw"])
+        right_turn = rig.face_layout(rig.Pose(turn=0.8))["eyes"]
+        self.assertLess(right_turn[1]["sw"], right_turn[0]["sw"])
+        self.assertLess(rig.face_layout(rig.Pose(turn=-0.8))["mouth"]["x"], 228)
+
+    def test_liquid_fills_requested_share_of_a_tilted_container(self):
+        from tabby_anim.shapes import Xf, clip_below, poly_area
+        xf = Xf(200, 140, rot=-50, scale=1.5)
+        interior = [xf(p) for p in [(-23, -34), (23, -34), (17, 31), (-17, 31)]]
+        total = poly_area(interior)
+        for level in (0.2, 0.5, 0.9):
+            lo, hi = min(p[1] for p in interior), max(p[1] for p in interior)
+            for _ in range(40):
+                mid = (lo + hi) / 2
+                lo, hi = (mid, hi) if poly_area(clip_below(interior, mid)) / total > level else (lo, mid)
+            self.assertAlmostEqual(poly_area(clip_below(interior, lo)) / total, level, places=2)
+
+    def test_water_stream_stays_vertical_when_its_parent_rotates(self):
+        spec = {"duration_s": 1, "loop": False, "keyframes": [{"t": 0, "eye_open": 0}], "props": [
+            {"type": "bottle", "name": "b", "keyframes": [{"t": 0, "x": 200, "y": 60, "rot": -115, "show": 0.001}]},
+            {"type": "water_stream", "attach_to": "b", "keyframes": [{"t": 0, "x": 0, "y": -66, "progress": 1}]}]}
+        spec["keyframes"] = [{"t": 0, "pose": {"eye_open": 0, "mouth_width": 1}}]
+        anim = rig.load_animation(spec)
+        anim.tracks[0].keyframes[0].pose["show"] = 1.0
+        img = rig.render_frame(anim, 0.0).convert("L")
+        by_name = {t.name: t for t in anim.tracks if t.name}
+        xf, _ = rig._track_xf(anim.tracks[1], {}, by_name, 0.0)
+        # the column straight below the stream origin is lit over most of the stream length
+        lit = sum(1 for y in range(int(xf.y) + 10, int(xf.y) + 90) if img.getpixel((round(xf.x), y)) > 60)
+        self.assertGreater(lit, 60)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -147,8 +147,9 @@ def catalog_sheet() -> Image.Image:
     for shape in rig.EYE_SHAPES:
         tiles.append((f"eye_shape: {shape}", rig.render_pose(rig.Pose(eye_shape=shape))))
     tiles.append(("tears + sweat", rig.render_pose(rig.Pose(tears=1, sweat=1, mouth_curve=-8), t=0.3)))
+    tiles.append(("turn -0.6, face_x 110", rig.render_pose(rig.Pose(face_x=110, face_scale=0.8, turn=-0.6))))
     tiles.append(("blush + mouth_open", rig.render_pose(rig.Pose(blush=1, mouth_open=16, mouth_width=70, eye_shape="happy"))))
-    progress = {"water_glass": 0.7, "fireworks": 0.6, "book": 0.4, "checklist": 2.7, "clock": 0.3}
+    progress = {"bottle": 0.6, "water_stream": 0.8, "water_glass": 0.7, "fireworks": 0.6, "book": 0.4, "checklist": 2.7, "clock": 0.3}
     variant = {"fireworks": "mix", "book": "open"}
     for shape in HAND_SHAPES:
         face = rig.Keyframe(0, {"eye_open": 0.0, "mouth_curve": 0, "mouth_width": 40})

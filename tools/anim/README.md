@@ -55,6 +55,9 @@ Nicht gesetzte Parameter übernehmen den Wert des vorigen Keyframes. `ease` gilt
 | `blush` | 0 | 0–1 Wangen-Striche |
 | `tears` | 0 | 0–1 Tränen laufen aus beiden Augen (bewegen sich von selbst) |
 | `sweat` | 0 | 0–1 Schweißtropfen an der Kopfseite |
+| `face_x`, `face_y` | 0 | ganzes Gesicht verschieben (px), z. B. nach rechts, wenn links ein Gegenstand liegt |
+| `face_scale` | 1 | Gesichtsgröße 0,5–1,2 |
+| `turn` | 0 | −1…1 Kopf zur Seite drehen (− = nach links): Augen und Mund wandern mit, der Abstand wird kleiner, das Auge in Blickrichtung wird schmaler (Dreiviertelansicht) |
 | `eye_shape` | `pill` | `pill`, `happy` (^ ^), `closed`, `angry`, `sad`, `squint` (> <), `heart`, `star`, `dizzy`. Wechselt am Keyframe ohne Überblenden. |
 
 Easing: `linear`, `in`, `out`, `inOut` (Standard), `back` (Überschwingen), `hold` (springt am Ende).
@@ -89,7 +92,9 @@ Keyframe-Felder (flach, ohne `pose`): `t`, `ease`, `x`, `y` (Mittelpunkt, Bildsc
 
 | `type` | `progress` | `variant` | Größe bei scale 1 |
 |---|---|---|---|
-| `water_glass` | Wasserstand 0–1 | – | 52 × 70 |
+| `water_glass` | Wasserstand 0–1 (Oberfläche bleibt beim Kippen waagerecht) | – | 52 × 70 |
+| `bottle` | Füllstand 0–1 (Oberfläche waagerecht). Öffnung bei lokal (0, −64) | Etikettfarbe | 40 × 110 |
+| `water_stream` | 0–1 Strahl wächst nach unten, 1–2 Ende fällt ab. Immer senkrecht, auch angehängt | – | 100 lang |
 | `water_drop` | – | Farbe | 24 × 32 |
 | `fireworks` | 0–0,35 Rakete steigt, 0,35–1 Explosion und Verblassen | `gold`, `pink`, `blue`, `green`, `purple`, `mix` | Ø 150 |
 | `book` | offen: jede ganze Zahl = eine Seite umgeblättert | `open` (Standard), `closed` | 124 × 66 |
@@ -101,5 +106,7 @@ Keyframe-Felder (flach, ohne `pose`): `t`, `ease`, `x`, `y` (Mittelpunkt, Bildsc
 | `trophy` | – | – | 76 × 74 |
 | `clock` | Minutenzeiger (1 = eine Umdrehung) | – | 80 × 90 |
 | `zzz` | – (steigt von selbst) | – | 60 × 90 |
+
+**Gießen:** `water_stream` mit `attach_to` an die Flasche hängen (`x: 0, y: -66`), Flasche um ca. −115° kippen, Strahl und Füllstände zeitlich koppeln (Beispiel `refill_water`).
 
 Tipp: `show` von 0 auf 1 mit `ease: "back"` = Aufploppen. Eine Spur vor ihrem Auftritt mit `show: 0` verstecken, sonst ist sie ab 0 s sichtbar (bei `fireworks` stünde die Rakete schon unten bereit).

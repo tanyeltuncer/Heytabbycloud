@@ -78,6 +78,9 @@ Hintergrund und Stilguide: `docs/spec/animationen.md`. Parameter-Referenz: `tool
 | `tears` | 0 | 0…1 | Tränen (laufen von selbst); mit `eye_shape: "sad"` und `mouth_curve` < 0 |
 | `sweat` | 0 | 0…1 | Schweißtropfen: Stress, Verlegenheit, Anstrengung |
 | `eye_shape` | `pill` | siehe unten | wechselt am Keyframe (kein Überblenden) |
+| `face_x` / `face_y` | 0 | −150…150 / −60…40 | ganzes Gesicht verschieben, um Platz für Gegenstände zu machen |
+| `face_scale` | 1 | 0,6…1,1 | kleiner, wenn Gegenstände viel Platz brauchen |
+| `turn` | 0 | −1…1 | Kopf zur Seite drehen (− = nach links), für „schaut zur Liste/zum Glas“; 0,4–0,7 wirkt natürlich |
 
 **Augenformen** (`eye_shape`): `pill` (normal), `happy` (^ ^ Freude), `closed` (Strich, Genuss, Schlaf), `angry` (innen tief), `sad` (außen tief), `squint` (> < Anstrengung, Lachen, Niesen), `heart` (verliebt), `star` (begeistert), `dizzy` (Spiralen, schwindelig). Wechsel wirken am natürlichsten während eines Blinzelns oder einer schnellen Bewegung.
 
@@ -86,12 +89,16 @@ Hintergrund und Stilguide: `docs/spec/animationen.md`. Parameter-Referenz: `tool
 Vollständige Referenz: `tools/anim/README.md` → „Hände und Gegenstände“. Den Katalog aller Teile erzeugst du mit `python -m tabby_anim catalog --out ../../dist/catalog.png`. Sieh ihn dir an, bevor du Teile auswählst.
 
 - **Hände** `type: "hand"`, `side` left/right, `shape`: `open`, `fist`, `point`, `thumbs_up`, `peace`, `hold`
-- **Gegenstände**: `water_glass`, `water_drop`, `fireworks`, `book`, `checklist`, `coffee`, `heart`, `sparkle`, `star`, `trophy`, `clock`, `zzz` (Bedeutung von `progress` und `variant` in der README)
+- **Gegenstände**: `water_glass`, `bottle`, `water_stream`, `water_drop`, `fireworks`, `book`, `checklist`, `coffee`, `heart`, `sparkle`, `star`, `trophy`, `clock`, `zzz` (Bedeutung von `progress` und `variant` in der README)
 - Keyframe-Felder flach: `t`, `ease`, `x`, `y`, `rot`, `scale`, `show`, `progress`, `shape`, `variant`
 - **Halten**: Gegenstand mit `attach_to: "<name der hand>"` an die Hand hängen, Position dann relativ, z. B. Glas `y: -62` über der `hold`-Hand. Den Gegenstand **vor** der Hand in die Liste schreiben, damit die Finger vorne liegen.
 - **Auftritt**: `show` 0 → 1 mit `ease: "back"`; vorher `show: 0` setzen. Abgang: aus dem Bild fahren (`y` > 300) oder `show` → 0.
 
-**Bildaufbau mit Teilen:** Das Gesicht füllt die Fläche (Augen x ≈ 76–148 und 312–385, y ≈ 71–195, Mund y ≈ 195). Hände gehören in die unteren Ecken (y 230–260) oder kommen von unten ins Bild. Gegenstände dürfen Mund oder Augenunterkante überdecken, aber nie beide Augen. Hintergrund-Effekte (Feuerwerk) mit `layer: "back"` in die oberen Ecken. Achte darauf, dass eine Hand nicht den wichtigen Teil eines gehaltenen Gegenstands verdeckt (z. B. den Wasserstand).
+**Das Gesicht ist beweglich.** Es muss nicht in der Mitte bleiben: Liegt der Gegenstand links, rückt das Gesicht nach rechts (`face_x` 100–135, `face_scale` 0,7–0,8) und dreht sich zum Gegenstand (`turn` −0,5 bis −0,7). Zum Abschluss dreht es sich wieder nach vorn (`turn` 0) und kehrt zur Mitte zurück, weil die Firmware danach in den Idle-Zustand geht (Beispiel `checklist_done`, `refill_water`).
+
+**Vollständige Abläufe statt Andeutungen.** Zeig die Handlung ganz: ein Glas wird **wirklich leer getrunken** (Füllstand 1 → 0, Glas kippt dabei immer weiter, weil das Wasser waagerecht bleibt), eine **Flasche gießt** das Glas voll (`bottle` + `water_stream`), alle drei Häkchen werden gesetzt. Ursache und Wirkung zeitlich koppeln (Strahl läuft genau, solange der Pegel steigt).
+
+**Bildaufbau mit Teilen:** Das Gesicht füllt ohne Verschiebung die Fläche (Augen x ≈ 76–148 und 312–385, y ≈ 71–195, Mund y ≈ 195). Hände gehören in die unteren Ecken (y 230–260) oder kommen von unten ins Bild. Gegenstände dürfen Mund oder Augenunterkante überdecken, aber nie beide Augen. Hintergrund-Effekte (Feuerwerk) mit `layer: "back"` in die oberen Ecken. Achte darauf, dass eine Hand nicht den wichtigen Teil eines gehaltenen Gegenstands verdeckt (z. B. den Wasserstand).
 
 Das Rig kann **nicht**: Text, Körper oder Arme, freie Formen außerhalb des Katalogs. Neue Teile = neue Zeichenfunktion in `props.py`/`hands.py` plus Eintrag in README und Katalog.
 
@@ -116,7 +123,7 @@ Das Rig kann **nicht**: Text, Körper oder Arme, freie Formen außerhalb des Kat
 
 Gute Vorlagen in `animations/src/`:
 - nur Gesicht: `blink_idle_loop` (Loop, Blick, Blinzeln), `happy_bounce` (Antizipation, Sprung, Squash, Wangen), `sleepy_yawn` (langsames Timing), `sneeze`, `crying_loop` (Tränen, Zittern)
-- mit Teilen: `drink_water_sip` (Hand hält Glas per `attach_to`, Wasserstand sinkt), `fireworks_celebrate` (Hintergrund-Effekte, Sternenaugen, winkende Hände), `reading_loop` (Buch mit zwei Händen, Seite blättert), `checklist_done` (Häkchen nacheinander, Funkeln, Daumen hoch), `in_love_loop` (Herzaugen, aufsteigende Herzen nahtlos im Loop)
+- mit Teilen: `drink_water_sip` (Hand hält Glas per `attach_to`, wird von voll bis leer getrunken), `refill_water` (Flasche gießt mit Strahl ins Glas, Gesicht rückt zur Seite und schaut zu), `fireworks_celebrate` (Hintergrund-Effekte, Sternenaugen, winkende Hände), `reading_loop` (Buch mit zwei Händen, Seite blättert), `checklist_done` (Liste links, Gesicht rechts und seitlich gedreht, Zeigefinger tippt jede Zeile, Daumen hoch), `in_love_loop` (Herzaugen, aufsteigende Herzen nahtlos im Loop)
 
 ## Grenzen und Lizenz
 

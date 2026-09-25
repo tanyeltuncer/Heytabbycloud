@@ -49,6 +49,11 @@ class Pose:
     blush: float = 0.0        # 0..1 cheek intensity
     tears: float = 0.0        # 0..1 tears running from both eyes
     sweat: float = 0.0        # 0..1 sweat drop at the side of the head
+    face_x: float = 0.0       # px, move the whole face (eyes, mouth, cheeks) anywhere on screen
+    face_y: float = 0.0
+    face_scale: float = 1.0   # whole face size, 0.5..1.2
+    turn: float = 0.0         # -1..1 head turned to screen left (-) / right (+): eyes and mouth shift,
+                              # spacing compresses, the far eye narrows (three-quarter side view)
     eye_shape: str = "pill"   # see EYE_SHAPES; switches at its keyframe (no blending)
 
 
@@ -139,32 +144,33 @@ def track_state(track: Track, t: float) -> dict:
 
 # --- face ---------------------------------------------------------------------
 
-def _eye_box(cx: float, bottom: float, p: Pose) -> tuple[float, float, float, float]:
-    w = 73 * p.eye_scale * p.squash
-    h = 124 * p.eye_scale / p.squash
+def _eye_box(cx: float, bottom: float, p: Pose, sw: float = 1.0, sh: float = 1.0) -> tuple[float, float, float, float]:
+    w = 73 * p.eye_scale * p.squash * sw
+    h = 124 * p.eye_scale / p.squash * sh
     # clamp: "back" easing may overshoot past fully open, eyes must not stretch
     eh = max(10.0, h * min(1.05, max(0.0, p.eye_open)))
     return cx - w / 2, bottom - eh, cx + w / 2, bottom
 
 
-def _eye(cv: Canvas, draw: ImageDraw.ImageDraw, cx: float, bottom: float, p: Pose, inner_right: bool) -> None:
+def _eye(cv: Canvas, draw: ImageDraw.ImageDraw, cx: float, bottom: float, p: Pose, inner_right: bool,
+         sw: float = 1.0, sh: float = 1.0) -> None:
     shape = "happy" if (p.eye_shape == "pill" and p.happy >= 0.5) else p.eye_shape
-    w = 73 * p.eye_scale * p.squash
-    h = 124 * p.eye_scale / p.squash
+    w = 73 * p.eye_scale * p.squash * sw
+    h = 124 * p.eye_scale / p.squash * sh
     cy = bottom - h / 2
     if shape == "happy":
-        th = 16 * p.eye_scale
+        th = 16 * p.eye_scale * sh
         box = [cx - w / 2, bottom - h * 0.55, cx + w / 2, bottom + h * 0.25]
         draw.arc([v * SS for v in box], start=200, end=340, fill=WHITE, width=int(th * SS))
         return
     if shape == "closed" or (shape == "pill" and p.eye_open <= 0.02):
-        cv.capsule((cx - w / 2 + 6, bottom - 6), (cx + w / 2 - 6, bottom - 6), 6, WHITE)
+        cv.capsule((cx - w / 2 + 6 * sh, bottom - 6 * sh), (cx + w / 2 - 6 * sh, bottom - 6 * sh), 6 * sh, WHITE)
         return
     if shape == "squint":  # ">" on the left eye, "<" on the right eye
         d = 1 if inner_right else -1
         hw, hh = w / 2 - 4, h * 0.28
         pts = [(cx - d * hw, cy - hh), (cx + d * hw, cy), (cx - d * hw, cy + hh)]
-        cv.polyline(pts, 15 * p.eye_scale, WHITE)
+        cv.polyline(pts, 15 * p.eye_scale * sh, WHITE)
         return
     if shape == "heart":
         cv.poly(heart_points(cx, cy + 6, w * 1.35), RED)
@@ -177,11 +183,11 @@ def _eye(cv: Canvas, draw: ImageDraw.ImageDraw, cx: float, bottom: float, p: Pos
         pts = []
         for i in range(60):
             a = i * 0.36 + (0 if inner_right else math.pi)
-            r = 3 + i * 0.55 * p.eye_scale
+            r = (3 + i * 0.55 * p.eye_scale) * sh
             pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
-        cv.polyline(pts, 7, WHITE)
+        cv.polyline(pts, 7 * sh, WHITE)
         return
-    x0, y0, x1, y1 = _eye_box(cx, bottom, p)
+    x0, y0, x1, y1 = _eye_box(cx, bottom, p, sw, sh)
     r = min(x1 - x0, y1 - y0) * 0.42  # rounded rectangle, not a full pill (upstream look)
     draw.rounded_rectangle([x0 * SS, y0 * SS, x1 * SS, y1 * SS], radius=r * SS, fill=WHITE)
     if shape in ("angry", "sad"):
@@ -227,34 +233,61 @@ def _cycle(t: float, period: float, duration: float, loop: bool) -> float:
     return (t / period) % 1.0
 
 
+def face_layout(p: Pose) -> dict:
+    """Screen positions of eyes and mouth after face_x/face_y/face_scale/turn."""
+    k = p.face_scale
+    turn = max(-1.0, min(1.0, p.turn))
+    cx = 230 + p.face_x + p.look_x  # upstream eyes sit at x=112/348, i.e. centred on 230
+    oy = p.face_y + p.look_y + p.bounce
+    shift = 70 * turn * k
+    half = 118 * k * (1 - 0.3 * abs(turn))
+    eyes = []
+    for side in (-1, 1):  # -1 = screen-left eye
+        # three-quarter view: the eye in the turn direction is farther away, so it is foreshortened
+        narrow = (turn > 0 and side > 0) or (turn < 0 and side < 0)
+        sw = k * (1 - 0.45 * abs(turn)) if narrow else k * (1 + 0.06 * abs(turn))
+        eyes.append({"x": cx + shift + side * half, "sw": sw, "sh": k * (1 - 0.06 * abs(turn) if narrow else 1),
+                     "inner_right": side < 0})
+    bottom = 140 + (195 - 140) * k + oy
+    mouth = {"x": cx - 2 * k + shift * 1.35 - p.look_x * 0.4, "y": 140 + (195 - 140) * k + (p.face_y + p.bounce + p.look_y * 0.6),
+             "w": k * (1 - 0.35 * abs(turn))}
+    return {"eyes": eyes, "bottom": bottom, "mouth": mouth, "k": k}
+
+
 def _face(cv: Canvas, draw: ImageDraw.ImageDraw, p: Pose, t: float, duration: float, loop: bool) -> None:
-    ox, oy = p.look_x, p.look_y + p.bounce
-    eye_bottom = 195 + oy
-    for ex in (112, 348):
-        _eye(cv, draw, ex + ox, eye_bottom, p, inner_right=ex < 228)
+    lay = face_layout(p)
+    k, eye_bottom = lay["k"], lay["bottom"]
+    for e in lay["eyes"]:
+        _eye(cv, draw, e["x"], eye_bottom, p, inner_right=e["inner_right"], sw=e["sw"], sh=e["sh"])
     if p.blush > 0.05:
         blush = lerp_color(BLACK, BLUSH_PINK, min(1.0, p.blush))
-        for ex in (112, 348):
-            bx, by = ex + ox + (-8 if ex < 228 else 8), eye_bottom + 14
-            for i in range(5):  # short slanted strokes, like the upstream blush
-                x0 = bx - 34 + i * 14
-                cv.capsule((x0, by + 8), (x0 + 12, by - 5), 2, blush)
+        for e in lay["eyes"]:
+            out = -1 if e["inner_right"] else 1
+            bx, by = e["x"] + out * 8 * k, eye_bottom + 14 * k
+            n = 5 if e["sw"] >= k else 3
+            for i in range(n):
+                x0 = bx + (-34 + i * 14) * k * e["sw"] / k
+                cv.capsule((x0, by + 8 * k), (x0 + 12 * k, by - 5 * k), 2 * k, blush)
     if p.tears > 0.05:
         ph = _cycle(t, 0.7, duration, loop)
-        for ex in (112, 348):
-            x = ex + ox + (22 if ex < 228 else -22)
-            for k in (0.0, 0.5):
-                q = (ph + k) % 1.0
-                y = eye_bottom + 4 + q * 70
-                size = 7 * min(1.0, p.tears) * (1 - 0.3 * q)
+        for e in lay["eyes"]:
+            x = e["x"] + (22 if e["inner_right"] else -22) * e["sw"]
+            for off in (0.0, 0.5):
+                q = (ph + off) % 1.0
+                y = eye_bottom + 4 + q * 70 * k
+                size = 7 * k * min(1.0, p.tears) * (1 - 0.3 * q)
                 cv.poly(drop_points(x, y, size), lerp_color(BLUE, BLACK, max(0.0, q - 0.7) / 0.3))
     if p.sweat > 0.05:
         q = _cycle(t, 1.6, duration, loop)
-        x, y = 420 + ox, 70 + oy + 30 * q
-        size = 9 * min(1.0, p.sweat)
+        right = lay["eyes"][1]
+        x, y = right["x"] + 72 * k, eye_bottom - 125 * k + 30 * k * q
+        size = 9 * k * min(1.0, p.sweat)
         cv.poly(drop_points(x, y, size), BLUE_LIGHT)
-        cv.circle((x - 3, y - 1), size * 0.3, WHITE)
-    _mouth(cv, draw, 228 + ox * 0.6, 195 + oy * 0.6 + (8 if p.mouth_open > 1 else 0), p)
+        cv.circle((x - 3 * k, y - 1 * k), size * 0.3, WHITE)
+    m = lay["mouth"]
+    mp = Pose(**{**vars(p), "mouth_width": p.mouth_width * m["w"], "mouth_curve": p.mouth_curve * k,
+                 "mouth_open": p.mouth_open * k})
+    _mouth(cv, draw, m["x"], m["y"] + (8 * k if p.mouth_open > 1 else 0), mp)
 
 
 # --- tracks (hands and props) ---------------------------------------------------

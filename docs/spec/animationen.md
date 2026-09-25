@@ -119,11 +119,12 @@ Getestet und bewertet (Stand September 2026):
 **Teile-Katalog (umgesetzt):**
 - **9 Augenformen:** normal, `happy` (^ ^), `closed`, `angry`, `sad`, `squint` (> <), `heart`, `star`, `dizzy`, dazu Tränen, Schweiß und Wangen
 - **6 Handschuh-Hände:** `open`, `fist`, `point`, `thumbs_up`, `peace`, `hold`, links und rechts
-- **12 Gegenstände:** Wasserglas (mit Füllstand), Tropfen, Feuerwerk (Rakete und Explosion), Buch (offen/zu, blättern), Checkliste (Häkchen nacheinander), Kaffee (mit Dampf), Herz, Funkeln, Stern, Pokal, Wecker (Zeiger), Zzz
+- **Gesicht beweglich:** `face_x`/`face_y`/`face_scale` und `turn` (Dreiviertelansicht, das Auge in Blickrichtung wird schmaler)
+- **14 Gegenstände:** Wasserglas (Füllstand mit waagerechter Oberfläche, auch gekippt), Flasche, Wasserstrahl, Tropfen, Feuerwerk (Rakete und Explosion), Buch (offen/zu, blättern), Checkliste (Häkchen nacheinander), Kaffee (mit Dampf), Herz, Funkeln, Stern, Pokal, Wecker (Zeiger), Zzz
 
 Gegenstände lassen sich an Hände hängen (`attach_to`). Übersicht: `python -m tabby_anim catalog`. Referenz: [tools/anim/README.md](../../tools/anim/README.md).
 
-Beispiele mit Teilen: `drink_water_sip`, `fireworks_celebrate`, `reading_loop`, `checklist_done`, `in_love_loop`, `crying_loop`. Die automatischen Tests prüfen jedes Teil, die Spiegelung links/rechts, ungültige Angaben und die Loop-Nahtstellen.
+Beispiele mit Teilen: `refill_water`, `drink_water_sip`, `fireworks_celebrate`, `reading_loop`, `checklist_done`, `in_love_loop`, `crying_loop`. Die automatischen Tests prüfen jedes Teil, die Spiegelung links/rechts, ungültige Angaben und die Loop-Nahtstellen.
 
 **Noch offen:** schräge Blinzel-Striche wie im Original, Text, Körper. Jede neue Form ist eine kleine Zeichenfunktion und danach für die KI nur ein weiterer Parameter.
 

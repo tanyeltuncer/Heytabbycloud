@@ -1,0 +1,205 @@
+{
+  "duration_s": 5.0,
+  "loop": false,
+  "keyframes": [
+    {
+      "t": 0.0,
+      "pose": {
+        "mouth_curve": 12
+      }
+    },
+    {
+      "t": 0.6,
+      "pose": {
+        "face_x": 135,
+        "face_y": -30,
+        "face_scale": 0.7,
+        "turn": -0.5,
+        "look_y": 4
+      },
+      "ease": "inOut"
+    },
+    {
+      "t": 1.6,
+      "pose": {
+        "look_y": 10,
+        "eye_scale": 1.08,
+        "mouth_curve": 4,
+        "mouth_width": 70
+      },
+      "ease": "inOut"
+    },
+    {
+      "t": 3.4,
+      "pose": {
+        "look_y": 6
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 3.7,
+      "pose": {
+        "eye_shape": "happy",
+        "eye_scale": 1.0,
+        "bounce": -8,
+        "mouth_open": 12,
+        "mouth_width": 60,
+        "blush": 1
+      },
+      "ease": "out"
+    },
+    {
+      "t": 4.0,
+      "pose": {
+        "bounce": 0
+      },
+      "ease": "back"
+    },
+    {
+      "t": 4.3,
+      "pose": {
+        "turn": -0.2
+      },
+      "ease": "hold"
+    },
+    {
+      "t": 5.0,
+      "pose": {
+        "eye_shape": "pill",
+        "face_x": 0,
+        "face_y": 0,
+        "face_scale": 1.0,
+        "turn": 0,
+        "look_y": 0,
+        "mouth_open": 0,
+        "mouth_width": 94,
+        "mouth_curve": 14,
+        "blush": 0.3
+      },
+      "ease": "inOut"
+    }
+  ],
+  "props": [
+    {
+      "type": "water_glass",
+      "keyframes": [
+        {
+          "t": 0.0,
+          "x": 142,
+          "y": 340,
+          "progress": 0
+        },
+        {
+          "t": 0.5,
+          "y": 226,
+          "ease": "out"
+        },
+        {
+          "t": 1.75,
+          "progress": 0
+        },
+        {
+          "t": 3.4,
+          "progress": 0.92,
+          "ease": "linear"
+        },
+        {
+          "t": 4.4,
+          "y": 226
+        },
+        {
+          "t": 5.0,
+          "y": 345,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "type": "bottle",
+      "name": "bottle",
+      "keyframes": [
+        {
+          "t": 0.0,
+          "x": -70,
+          "y": -80,
+          "rot": -25,
+          "progress": 1.0
+        },
+        {
+          "t": 1.0,
+          "x": 205,
+          "y": 95,
+          "rot": 0,
+          "ease": "out"
+        },
+        {
+          "t": 1.5,
+          "rot": -115,
+          "ease": "inOut"
+        },
+        {
+          "t": 3.4,
+          "rot": -120,
+          "progress": 0.3,
+          "ease": "linear"
+        },
+        {
+          "t": 3.8,
+          "rot": -10,
+          "ease": "inOut"
+        },
+        {
+          "t": 4.4,
+          "x": -80,
+          "y": -90,
+          "rot": -30,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "type": "water_stream",
+      "attach_to": "bottle",
+      "keyframes": [
+        {
+          "t": 0.0,
+          "x": 0,
+          "y": -66,
+          "progress": 0
+        },
+        {
+          "t": 1.5,
+          "progress": 0
+        },
+        {
+          "t": 1.75,
+          "progress": 1,
+          "ease": "in"
+        },
+        {
+          "t": 3.35,
+          "progress": 1
+        },
+        {
+          "t": 3.6,
+          "progress": 2,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "type": "hand",
+      "side": "right",
+      "attach_to": "bottle",
+      "keyframes": [
+        {
+          "t": 0.0,
+          "x": 25,
+          "y": 12,
+          "rot": -90,
+          "shape": "hold"
+        }
+      ]
+    }
+  ]
+}

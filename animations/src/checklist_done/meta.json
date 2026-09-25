@@ -1,2 +1,7 @@
-{ "id": "checklist_done", "label": "DONE", "max_colors": 16, "max_kb": 150,
-  "prompt": "Tabby hakt auf einem Klemmbrett drei Aufgaben nacheinander ab und zeigt danach stolz den Daumen hoch." }
+{
+  "id": "checklist_done",
+  "label": "DONE",
+  "max_colors": 12,
+  "max_kb": 200,
+  "prompt": "Das Klemmbrett liegt links, Tabby r\u00fcckt nach rechts, dreht sich zur Liste und tippt mit dem Zeigefinger drei Aufgaben nacheinander ab. Danach dreht sich Tabby zum Betrachter und zeigt stolz den Daumen hoch."
+}
