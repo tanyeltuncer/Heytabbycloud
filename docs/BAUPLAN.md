@@ -38,6 +38,7 @@ Die technischen Details stehen in [spec/](spec/), Entscheidungen in [adr/](adr/)
 | P0.2 | **Gehäuse drucken lassen** | Upstream `hardware/amoled-1.64/V1/desktop-case/`, PETG. Parallel zur Lieferzeit. |
 | P0.3 | **Board prüfen** | Aufschrift/Revision fotografieren und in `docs/hardware-log.md` festhalten |
 | P0.4 | **Original-Firmware flashen** | Offizielles Release-Bundle 1.1.x von GitHub laden, im Browser mit dem [esptool-js-Webflasher](https://espressif.github.io/esptool-js/) flashen (Offsets aus dem Bundle-Manifest) |
+| P0.4b | *Alternative:* **offizielle Desktop-App** | Die [Hey-Taby-App](https://www.heytaby.com/downloads) (Mac, Windows, Linux experimentell) einmalig nutzen, um Tabby zu flashen und das Original-Verhalten als Referenz zu sehen. Bricht bewusst das Prinzip „nichts installieren“, ist optional und danach deinstallierbar. |
 | P0.5 | **Funktionstest** | Serielles Web-Terminal (z. B. [Spacehuhn Serial Terminal](https://serial.huhn.me/), 115200 Baud): `PING` → `TABY:PONG`, `INFO`, `confirmation`, `UI/choice_2?test:HALLO?\|JA\|NEIN` → tippen → `CHOICE_SIGNAL` |
 | P0.6 | **Upstream-Code lesen** | `taby_mqtt.c`, `taby_identity.c`, `taby_reusable_ui.c` (Karten-Syntax), `taby_http_server.c`, Notizen in `docs/hardware-log.md` |
 | P0.7 | **Montage** | `hardware.md` §3, Magnet, Gummi, Stahlplättchen |

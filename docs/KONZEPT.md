@@ -249,6 +249,7 @@ Entkoppeln = MQTT-Zugang löschen. Das Gerät fliegt sofort raus.
 | L2 | **Taby-Artwork** nur privat nutzen, Taby als Taby lassen, nicht als eigenen Charakter oder eigenes Produkt ausgeben. Bei Veröffentlichung auf das Original verweisen. |
 | L3 | Keine Nutzung von Name oder Logo „Hey Taby“ für ein öffentliches Angebot. Das Projekt heißt intern „Hey Tabby Cloud“ und bleibt ein privater Nachbau. |
 | L4 | Soll das Projekt je öffentlich oder kommerziell werden, braucht es **eigene Artwork**, und die Hersteller sollten vorher gefragt werden. |
+| L5 | Die **Desktop-App** des Originals ist proprietär. Sie darf zum Testen genutzt werden, wird aber **nicht** dekompiliert, und es werden keine Inhalte daraus extrahiert. Alles, was wir brauchen, steht in der offenen Firmware (Apache-2.0). |
 
 ### 7.6 Kosten
 
