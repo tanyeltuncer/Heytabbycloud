@@ -87,5 +87,87 @@ class ExampleSourcesTests(unittest.TestCase):
                     self.assertIn(entry["id"], result["firmware_row"])
 
 
+class PartsTests(unittest.TestCase):
+    """Hands, eye shapes and props from the parts catalogue."""
+
+    FACE_OFF = rig.Keyframe(0, {"eye_open": 0.0, "mouth_curve": 0, "mouth_width": 40})
+
+    def lit_pixels(self, img):
+        return img.convert("L").point(lambda v: 255 if v > 40 else 0).histogram()[255]
+
+    def test_every_eye_shape_renders_distinctly(self):
+        pill = rig.render_pose(rig.Pose()).tobytes()
+        for shape in rig.EYE_SHAPES:
+            with self.subTest(shape=shape):
+                img = rig.render_pose(rig.Pose(eye_shape=shape))
+                self.assertEqual(img.getpixel((2, 2)), (0, 0, 0))
+                if shape != "pill":
+                    self.assertNotEqual(img.tobytes(), pill)
+
+    def test_unknown_eye_shape_is_rejected(self):
+        with self.assertRaises(ValueError):
+            rig.pose_at([rig.Keyframe(0, {"eye_shape": "laser"})], 0)
+
+    def test_every_hand_shape_renders_and_left_mirrors_right(self):
+        from PIL import ImageChops, ImageOps, ImageStat
+        from tabby_anim.hands import HAND_SHAPES
+        for shape in HAND_SHAPES:
+            with self.subTest(shape=shape):
+                frames = {}
+                for side in ("left", "right"):
+                    tr = rig.Track("hand", [rig.Keyframe(0, {"x": 228, "y": 140, "shape": shape})], side=side)
+                    frames[side] = rig.render_frame(rig.Animation([self.FACE_OFF], 1, False, [tr]), 0)
+                self.assertGreater(self.lit_pixels(frames["right"]), self.lit_pixels(rig.render_frame(
+                    rig.Animation([self.FACE_OFF], 1, False), 0)) + 300)
+                diff = ImageStat.Stat(ImageChops.difference(ImageOps.mirror(frames["left"]), frames["right"]).convert("L")).mean[0]
+                self.assertLess(diff, 1.0)
+
+    def test_every_prop_draws_something(self):
+        from tabby_anim.props import PROPS
+        empty = self.lit_pixels(rig.render_frame(rig.Animation([self.FACE_OFF], 1, False), 0))
+        for name in PROPS:
+            with self.subTest(prop=name):
+                tr = rig.Track(name, [rig.Keyframe(0, {"x": 228, "y": 140, "progress": 0.6, "variant": ""})])
+                img = rig.render_frame(rig.Animation([self.FACE_OFF], 1, False, [tr]), 0.3)
+                self.assertGreater(self.lit_pixels(img), empty + 150)
+
+    def test_invalid_tracks_are_rejected(self):
+        base = {"duration_s": 1, "keyframes": [{"t": 0}]}
+        for props in ([{"type": "rocket_ship", "keyframes": [{"t": 0}]}],
+                      [{"type": "hand", "keyframes": [{"t": 0, "shape": "claw"}]}],
+                      [{"type": "heart", "keyframes": [{"t": 0, "wobble": 1}]}],
+                      [{"type": "heart", "attach_to": "nobody", "keyframes": [{"t": 0}]}]):
+            with self.subTest(props=props):
+                with self.assertRaises(ValueError):
+                    rig.load_animation({**base, "props": props})
+
+    def test_attached_prop_follows_its_parent(self):
+        spec = {"duration_s": 1, "loop": False, "keyframes": [{"t": 0}], "props": [
+            {"type": "hand", "name": "h", "keyframes": [{"t": 0, "x": 100, "y": 200}, {"t": 1, "x": 300, "y": 200}]},
+            {"type": "heart", "attach_to": "h", "keyframes": [{"t": 0, "x": 0, "y": -50}]}]}
+        anim = rig.load_animation(spec)
+        by_name = {t.name: t for t in anim.tracks if t.name}
+        xf0, _ = rig._track_xf(anim.tracks[1], {}, by_name, 0.0)
+        xf1, _ = rig._track_xf(anim.tracks[1], {}, by_name, 1.0)
+        self.assertAlmostEqual(xf0.x, 100)
+        self.assertAlmostEqual(xf1.x, 300)
+        self.assertAlmostEqual(xf1.y, 150)
+
+    def test_strings_switch_at_their_keyframe(self):
+        kfs = [rig.Keyframe(0, {"eye_shape": "pill"}), rig.Keyframe(1, {"eye_shape": "heart"})]
+        self.assertEqual(rig.pose_at(kfs, 0.99).eye_shape, "pill")
+        self.assertEqual(rig.pose_at(kfs, 1.0).eye_shape, "heart")
+
+    def test_loop_examples_are_seamless(self):
+        from PIL import ImageChops, ImageStat
+        for src in sorted(p for p in SOURCES.iterdir() if (p / "keyframes.json").exists()):
+            anim = rig.load_animation(json.loads((src / "keyframes.json").read_text()))
+            if not anim.loop:
+                continue
+            with self.subTest(src=src.name):
+                a, b = rig.render_frame(anim, 0.0), rig.render_frame(anim, anim.duration_s)
+                self.assertLess(ImageStat.Stat(ImageChops.difference(a, b).convert("L")).mean[0], 1.0)
+
+
 if __name__ == "__main__":
     unittest.main()

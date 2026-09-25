@@ -1,0 +1,13 @@
+{
+  "duration_s": 2.1,
+  "loop": true,
+  "keyframes": [
+    { "t": 0.0, "pose": { "eye_shape": "sad", "eye_open": 0.85, "tears": 1, "mouth_curve": -10, "mouth_width": 70, "look_y": 4 } },
+    { "t": 0.35, "pose": { "look_x": -2, "bounce": 2 }, "ease": "inOut" },
+    { "t": 0.7, "pose": { "look_x": 2, "bounce": 0 }, "ease": "inOut" },
+    { "t": 1.05, "pose": { "look_x": -2, "bounce": 2, "mouth_curve": -13 }, "ease": "inOut" },
+    { "t": 1.4, "pose": { "look_x": 2, "bounce": 0 }, "ease": "inOut" },
+    { "t": 1.75, "pose": { "look_x": -1, "bounce": 1, "mouth_curve": -10 }, "ease": "inOut" },
+    { "t": 2.1, "pose": { "look_x": 0, "bounce": 0 }, "ease": "inOut" }
+  ]
+}

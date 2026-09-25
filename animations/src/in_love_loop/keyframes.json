@@ -1,0 +1,27 @@
+{
+  "duration_s": 2.0,
+  "loop": true,
+  "keyframes": [
+    { "t": 0.0, "pose": { "eye_shape": "heart", "eye_scale": 1.0, "blush": 1, "mouth_curve": 14 } },
+    { "t": 0.15, "pose": { "eye_scale": 1.15, "bounce": -2 }, "ease": "out" },
+    { "t": 0.35, "pose": { "eye_scale": 1.0, "bounce": 0 }, "ease": "in" },
+    { "t": 0.5, "pose": { "eye_scale": 1.12, "bounce": -2 }, "ease": "out" },
+    { "t": 0.8, "pose": { "eye_scale": 1.0, "bounce": 0 }, "ease": "inOut" },
+    { "t": 2.0, "pose": { "eye_scale": 1.0 } }
+  ],
+  "props": [
+    { "type": "heart", "keyframes": [
+        { "t": 0.0, "x": 40, "y": 270, "scale": 0.45, "rot": -10, "show": 0 },
+        { "t": 0.4, "show": 1, "ease": "out" },
+        { "t": 1.6, "x": 30, "y": 70, "rot": 10, "show": 1, "ease": "linear" },
+        { "t": 2.0, "x": 28, "y": 30, "show": 0, "ease": "in" }
+      ] },
+    { "type": "heart", "keyframes": [
+        { "t": 0.0, "x": 425, "y": 150, "scale": 0.35, "rot": 10, "show": 1 },
+        { "t": 0.6, "x": 432, "y": 40, "show": 0, "ease": "in" },
+        { "t": 0.62, "x": 420, "y": 275, "show": 0, "ease": "hold" },
+        { "t": 1.0, "show": 1, "ease": "out" },
+        { "t": 2.0, "x": 425, "y": 150, "rot": 10, "show": 1, "ease": "linear" }
+      ] }
+  ]
+}

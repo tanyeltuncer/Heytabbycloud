@@ -44,7 +44,7 @@ Hintergrund und Stilguide: `docs/spec/animationen.md`. Parameter-Referenz: `tool
   "prompt": "<die Beschreibung des Nutzers, wörtlich>" }
 ```
 - `label`: max. 12 Zeichen, Großbuchstaben, erscheint, falls das Gerät den Clip nicht hat
-- Budget: Loops `max_kb` ≤ 80, Ereignisse ≤ 150. `max_colors` 8–16.
+- Budget: Loops `max_kb` ≤ 80 (mit Teilen ≤ 100), Ereignisse ≤ 150, mit Händen oder Gegenständen ≤ 200. `max_colors` 8–16. Wird es zu groß: weniger dauernde Bewegung (Winken, Hüpfen), kürzere Effekte, weniger Farben.
 
 `keyframes.json`:
 ```json
@@ -75,8 +75,25 @@ Hintergrund und Stilguide: `docs/spec/animationen.md`. Parameter-Referenz: `tool
 | `mouth_width` | 94 | 50…110 | schmal bei offenem Mund (60–70) |
 | `mouth_open` | 0 | 0 / 10…32 | offener Mund; > 1 zählt als offen |
 | `blush` | 0 | 0…1 | Wangen; für Freude, Verlegenheit, Liebe |
+| `tears` | 0 | 0…1 | Tränen (laufen von selbst); mit `eye_shape: "sad"` und `mouth_curve` < 0 |
+| `sweat` | 0 | 0…1 | Schweißtropfen: Stress, Verlegenheit, Anstrengung |
+| `eye_shape` | `pill` | siehe unten | wechselt am Keyframe (kein Überblenden) |
 
-Das Rig kann (noch) **nicht**: Hände, Requisiten, `> <`-Augen, Herzen, Tränen, Schweißtropfen, Text. Verlangt die Beschreibung so etwas, setze sie mit Gesichtsausdruck und Bewegung um und sag dem Nutzer offen, was fehlt (Ausbau: neue Zeichenfunktion in `rig.py`).
+**Augenformen** (`eye_shape`): `pill` (normal), `happy` (^ ^ Freude), `closed` (Strich, Genuss, Schlaf), `angry` (innen tief), `sad` (außen tief), `squint` (> < Anstrengung, Lachen, Niesen), `heart` (verliebt), `star` (begeistert), `dizzy` (Spiralen, schwindelig). Wechsel wirken am natürlichsten während eines Blinzelns oder einer schnellen Bewegung.
+
+## Hände und Gegenstände (`props`)
+
+Vollständige Referenz: `tools/anim/README.md` → „Hände und Gegenstände“. Den Katalog aller Teile erzeugst du mit `python -m tabby_anim catalog --out ../../dist/catalog.png`. Sieh ihn dir an, bevor du Teile auswählst.
+
+- **Hände** `type: "hand"`, `side` left/right, `shape`: `open`, `fist`, `point`, `thumbs_up`, `peace`, `hold`
+- **Gegenstände**: `water_glass`, `water_drop`, `fireworks`, `book`, `checklist`, `coffee`, `heart`, `sparkle`, `star`, `trophy`, `clock`, `zzz` (Bedeutung von `progress` und `variant` in der README)
+- Keyframe-Felder flach: `t`, `ease`, `x`, `y`, `rot`, `scale`, `show`, `progress`, `shape`, `variant`
+- **Halten**: Gegenstand mit `attach_to: "<name der hand>"` an die Hand hängen, Position dann relativ, z. B. Glas `y: -62` über der `hold`-Hand. Den Gegenstand **vor** der Hand in die Liste schreiben, damit die Finger vorne liegen.
+- **Auftritt**: `show` 0 → 1 mit `ease: "back"`; vorher `show: 0` setzen. Abgang: aus dem Bild fahren (`y` > 300) oder `show` → 0.
+
+**Bildaufbau mit Teilen:** Das Gesicht füllt die Fläche (Augen x ≈ 76–148 und 312–385, y ≈ 71–195, Mund y ≈ 195). Hände gehören in die unteren Ecken (y 230–260) oder kommen von unten ins Bild. Gegenstände dürfen Mund oder Augenunterkante überdecken, aber nie beide Augen. Hintergrund-Effekte (Feuerwerk) mit `layer: "back"` in die oberen Ecken. Achte darauf, dass eine Hand nicht den wichtigen Teil eines gehaltenen Gegenstands verdeckt (z. B. den Wasserstand).
+
+Das Rig kann **nicht**: Text, Körper oder Arme, freie Formen außerhalb des Katalogs. Neue Teile = neue Zeichenfunktion in `props.py`/`hands.py` plus Eintrag in README und Katalog.
 
 ## Stilregeln (Original-Look)
 
@@ -97,7 +114,9 @@ Das Rig kann (noch) **nicht**: Hände, Requisiten, `> <`-Augen, Herzen, Tränen,
 
 ## Beispiele
 
-Gute Vorlagen im Repo: `animations/src/blink_idle_loop` (Loop, Blick und Blinzeln), `happy_bounce` (Ereignis mit Antizipation, Sprung, Squash, Überschwingen, Wangen) und `sleepy_yawn` (langsames Timing, offener Mund).
+Gute Vorlagen in `animations/src/`:
+- nur Gesicht: `blink_idle_loop` (Loop, Blick, Blinzeln), `happy_bounce` (Antizipation, Sprung, Squash, Wangen), `sleepy_yawn` (langsames Timing), `sneeze`, `crying_loop` (Tränen, Zittern)
+- mit Teilen: `drink_water_sip` (Hand hält Glas per `attach_to`, Wasserstand sinkt), `fireworks_celebrate` (Hintergrund-Effekte, Sternenaugen, winkende Hände), `reading_loop` (Buch mit zwei Händen, Seite blättert), `checklist_done` (Häkchen nacheinander, Funkeln, Daumen hoch), `in_love_loop` (Herzaugen, aufsteigende Herzen nahtlos im Loop)
 
 ## Grenzen und Lizenz
 

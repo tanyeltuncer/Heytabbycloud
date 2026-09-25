@@ -116,7 +116,16 @@ Getestet und bewertet (Stand September 2026):
 
 **Rundlauf-Test der Pipeline mit Originalen:** GIF zerlegen → Pipeline → GIF. Jedes Bild ist **pixelgenau identisch**, und die Dateien sind mit gifsicle im Schnitt ~14 % kleiner (6 Clips: 883 → 761 KB).
 
-**Grenzen des Rigs (Ausbauideen):** Hände/Handschuhe, Requisiten, Spezialaugen (`>` `<`, Herzen, Tränen) und schräge Blinzel-Striche wie im Original fehlen noch. Jede neue Form ist eine kleine Zeichenfunktion im Rig und danach für die KI nur ein weiterer Parameter.
+**Teile-Katalog (umgesetzt):**
+- **9 Augenformen:** normal, `happy` (^ ^), `closed`, `angry`, `sad`, `squint` (> <), `heart`, `star`, `dizzy`, dazu Tränen, Schweiß und Wangen
+- **6 Handschuh-Hände:** `open`, `fist`, `point`, `thumbs_up`, `peace`, `hold`, links und rechts
+- **12 Gegenstände:** Wasserglas (mit Füllstand), Tropfen, Feuerwerk (Rakete und Explosion), Buch (offen/zu, blättern), Checkliste (Häkchen nacheinander), Kaffee (mit Dampf), Herz, Funkeln, Stern, Pokal, Wecker (Zeiger), Zzz
+
+Gegenstände lassen sich an Hände hängen (`attach_to`). Übersicht: `python -m tabby_anim catalog`. Referenz: [tools/anim/README.md](../../tools/anim/README.md).
+
+Beispiele mit Teilen: `drink_water_sip`, `fireworks_celebrate`, `reading_loop`, `checklist_done`, `in_love_loop`, `crying_loop`. Die automatischen Tests prüfen jedes Teil, die Spiegelung links/rechts, ungültige Angaben und die Loop-Nahtstellen.
+
+**Noch offen:** schräge Blinzel-Striche wie im Original, Text, Körper. Jede neue Form ist eine kleine Zeichenfunktion und danach für die KI nur ein weiterer Parameter.
 
 **In Claude Code (umgesetzt):** Skill `/tabby-animation <Beschreibung>` (`.claude/skills/tabby-animation/SKILL.md`). Getestet mit „Tabby niest“ → `animations/src/sneeze` (47 Frames, 7 Farben, 45 KB), nach zwei Korrekturrunden anhand des Kontaktbogens.
 

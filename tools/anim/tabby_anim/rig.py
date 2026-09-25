@@ -3,11 +3,17 @@
 An animation is a list of keyframes over a few named parameters. That makes
 it easy to write by hand *and* easy for an LLM to generate: describe a mood,
 get keyframes back, render them here in the exact upstream look (pure black
-background, white pill eyes, thin mouth stroke, few colours, 24 fps).
+background, white eyes, thin mouth stroke, glove hands, flat props, 24 fps).
 
 Geometry is measured from the upstream `idle_01_loop` clip (landscape view):
-eyes ~73 x 124 px pills centred at x=112/348, y=133; mouth a ~94 px wide,
-6 px thick arc around y=195. A blink squashes the eyes towards their bottom.
+eyes ~73 x 124 px rounded rectangles centred at x=112/348, y=133; mouth a
+~94 px wide brush stroke around y=195. A blink squashes the eyes towards
+their bottom.
+
+Besides the face (`keyframes`), an animation can have `props`: tracks for
+glove hands and items, each with its own keyframes (position, rotation,
+scale, show, progress, shape/variant). A track can be attached to another
+named track, e.g. a glass held by a hand.
 """
 
 from __future__ import annotations
@@ -18,13 +24,14 @@ from dataclasses import dataclass, field, fields
 from PIL import Image, ImageDraw
 
 from .gif import FPS, LANDSCAPE
+from .hands import GLOVES, HAND_SHAPES, draw_hand
+from .props import PROPS
+from .shapes import (BLACK, BLUE, BLUE_LIGHT, GOLD, MOUTH_RED, PINK, RED, SS, WHITE, Canvas, Xf, drop_points,
+                     heart_points, lerp_color, star_points)
 
-SS = 4  # supersampling factor for smooth, anti-aliased edges
+BLUSH_PINK = PINK
 
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-MOUTH_RED = (214, 84, 77)
-BLUSH_PINK = (240, 120, 140)
+EYE_SHAPES = ("pill", "happy", "closed", "angry", "sad", "squint", "heart", "star", "dizzy")
 
 
 @dataclass
@@ -35,14 +42,19 @@ class Pose:
     eye_open: float = 1.0     # 0 = closed line, 1 = fully open (squashes towards bottom)
     eye_scale: float = 1.0    # uniform eye size
     squash: float = 1.0       # >1 wider+flatter, <1 narrower+taller (volume kept)
-    happy: float = 0.0        # 0 = pill eyes, 1 = "^ ^" arc eyes (crossfade by threshold)
+    happy: float = 0.0        # legacy switch: >= 0.5 behaves like eye_shape "happy"
     mouth_curve: float = 12.0  # px, >0 smile, <0 frown, 0 straight line
     mouth_width: float = 94.0
     mouth_open: float = 0.0   # 0 = stroke only, >0 = open mouth height in px
     blush: float = 0.0        # 0..1 cheek intensity
+    tears: float = 0.0        # 0..1 tears running from both eyes
+    sweat: float = 0.0        # 0..1 sweat drop at the side of the head
+    eye_shape: str = "pill"   # see EYE_SHAPES; switches at its keyframe (no blending)
 
 
 POSE_FIELDS = {f.name for f in fields(Pose)}
+TRACK_NUMBERS = {"x": 228.0, "y": 140.0, "rot": 0.0, "scale": 1.0, "show": 1.0, "progress": 0.0}
+TRACK_STRINGS = {"shape", "variant"}
 
 
 @dataclass
@@ -50,6 +62,24 @@ class Keyframe:
     t: float                  # seconds
     pose: dict = field(default_factory=dict)
     ease: str = "inOut"       # easing *into* this keyframe
+
+
+@dataclass
+class Track:
+    type: str                 # "hand" or a prop name from props.PROPS
+    keyframes: list[Keyframe]
+    name: str = ""
+    side: str = "right"       # hands only
+    layer: str = "front"      # "front" (over the face) or "back"
+    attach_to: str = ""       # name of another track; x/y/rot become relative to it
+
+
+@dataclass
+class Animation:
+    keyframes: list[Keyframe]
+    duration_s: float
+    loop: bool = True
+    tracks: list[Track] = field(default_factory=list)
 
 
 def _ease(name: str, x: float) -> float:
@@ -69,42 +99,103 @@ def _ease(name: str, x: float) -> float:
     return 4 * x ** 3 if x < 0.5 else 1 - (-2 * x + 2) ** 3 / 2  # inOut
 
 
-def pose_at(keyframes: list[Keyframe], t: float) -> Pose:
-    """Interpolate the pose at time t. Parameters not set in a keyframe carry over."""
+def _interp(keyframes: list[Keyframe], t: float, defaults: dict, allowed: set[str]) -> dict:
+    """Interpolate numbers; strings switch at their keyframe. Unset values carry over."""
     resolved: list[tuple[float, dict, str]] = []
-    current = vars(Pose()).copy()
+    current = dict(defaults)
     for kf in sorted(keyframes, key=lambda k: k.t):
-        unknown = set(kf.pose) - POSE_FIELDS
+        unknown = set(kf.pose) - allowed
         if unknown:
-            raise ValueError(f"unknown pose parameter(s): {sorted(unknown)}")
+            raise ValueError(f"unknown parameter(s): {sorted(unknown)}")
         current = {**current, **kf.pose}
         resolved.append((kf.t, current, kf.ease))
     if t <= resolved[0][0]:
-        return Pose(**resolved[0][1])
+        return dict(resolved[0][1])
     for (t0, p0, _), (t1, p1, ease) in zip(resolved, resolved[1:]):
         if t0 <= t <= t1:
             k = _ease(ease, (t - t0) / (t1 - t0) if t1 > t0 else 1.0)
-            return Pose(**{n: p0[n] + (p1[n] - p0[n]) * k for n in POSE_FIELDS})
-    return Pose(**resolved[-1][1])
+            out = {}
+            for n, v0 in p0.items():
+                v1 = p1[n]
+                if isinstance(v0, str) or isinstance(v1, str):
+                    out[n] = v1 if t >= t1 else v0
+                else:
+                    out[n] = v0 + (v1 - v0) * k
+            return out
+    return dict(resolved[-1][1])
 
 
-def _eye(draw: ImageDraw.ImageDraw, cx: float, cy_bottom: float, p: Pose) -> None:
+def pose_at(keyframes: list[Keyframe], t: float) -> Pose:
+    values = _interp(keyframes, t, vars(Pose()), POSE_FIELDS)
+    if values["eye_shape"] not in EYE_SHAPES:
+        raise ValueError(f"unknown eye_shape '{values['eye_shape']}', use one of {EYE_SHAPES}")
+    return Pose(**values)
+
+
+def track_state(track: Track, t: float) -> dict:
+    defaults = {**TRACK_NUMBERS, "shape": "open", "variant": ""}
+    return _interp(track.keyframes, t, defaults, set(TRACK_NUMBERS) | TRACK_STRINGS)
+
+
+# --- face ---------------------------------------------------------------------
+
+def _eye_box(cx: float, bottom: float, p: Pose) -> tuple[float, float, float, float]:
     w = 73 * p.eye_scale * p.squash
     h = 124 * p.eye_scale / p.squash
-    if p.happy >= 0.5:
-        # "^" arc eye: thick upward arc
-        th = 16 * p.eye_scale
-        box = [cx - w / 2, cy_bottom - h * 0.55, cx + w / 2, cy_bottom + h * 0.25]
-        draw.arc([v * SS for v in box], start=200, end=340, fill=WHITE, width=int(th * SS))
-        return
     # clamp: "back" easing may overshoot past fully open, eyes must not stretch
     eh = max(10.0, h * min(1.05, max(0.0, p.eye_open)))
-    r = min(w, eh) * 0.42  # rounded rectangle, not a full pill (upstream look)
-    box = [cx - w / 2, cy_bottom - eh, cx + w / 2, cy_bottom]
-    draw.rounded_rectangle([v * SS for v in box], radius=r * SS, fill=WHITE)
+    return cx - w / 2, bottom - eh, cx + w / 2, bottom
 
 
-def _mouth(draw: ImageDraw.ImageDraw, cx: float, cy: float, p: Pose) -> None:
+def _eye(cv: Canvas, draw: ImageDraw.ImageDraw, cx: float, bottom: float, p: Pose, inner_right: bool) -> None:
+    shape = "happy" if (p.eye_shape == "pill" and p.happy >= 0.5) else p.eye_shape
+    w = 73 * p.eye_scale * p.squash
+    h = 124 * p.eye_scale / p.squash
+    cy = bottom - h / 2
+    if shape == "happy":
+        th = 16 * p.eye_scale
+        box = [cx - w / 2, bottom - h * 0.55, cx + w / 2, bottom + h * 0.25]
+        draw.arc([v * SS for v in box], start=200, end=340, fill=WHITE, width=int(th * SS))
+        return
+    if shape == "closed" or (shape == "pill" and p.eye_open <= 0.02):
+        cv.capsule((cx - w / 2 + 6, bottom - 6), (cx + w / 2 - 6, bottom - 6), 6, WHITE)
+        return
+    if shape == "squint":  # ">" on the left eye, "<" on the right eye
+        d = 1 if inner_right else -1
+        hw, hh = w / 2 - 4, h * 0.28
+        pts = [(cx - d * hw, cy - hh), (cx + d * hw, cy), (cx - d * hw, cy + hh)]
+        cv.polyline(pts, 15 * p.eye_scale, WHITE)
+        return
+    if shape == "heart":
+        cv.poly(heart_points(cx, cy + 6, w * 1.35), RED)
+        cv.capsule((cx - w * 0.28, cy - w * 0.12), (cx - w * 0.18, cy - w * 0.22), 4, lerp_color(RED, WHITE, 0.6))
+        return
+    if shape == "star":
+        cv.poly(star_points(cx, cy, w * 0.72, w * 0.32), GOLD)
+        return
+    if shape == "dizzy":
+        pts = []
+        for i in range(60):
+            a = i * 0.36 + (0 if inner_right else math.pi)
+            r = 3 + i * 0.55 * p.eye_scale
+            pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+        cv.polyline(pts, 7, WHITE)
+        return
+    x0, y0, x1, y1 = _eye_box(cx, bottom, p)
+    r = min(x1 - x0, y1 - y0) * 0.42  # rounded rectangle, not a full pill (upstream look)
+    draw.rounded_rectangle([x0 * SS, y0 * SS, x1 * SS, y1 * SS], radius=r * SS, fill=WHITE)
+    if shape in ("angry", "sad"):
+        inner, outer = (x1, x0) if inner_right else (x0, x1)
+        low_x = inner if shape == "angry" else outer
+        high_x = outer if shape == "angry" else inner
+        # widen the cut past both edges so no anti-aliased sliver of the corner survives
+        away = 8 if low_x > high_x else -8
+        cut = [(high_x - away, y0 - 12), (low_x + away, y0 - 12), (low_x + away, y0 + (y1 - y0) * 0.42 + 3),
+               (low_x, y0 + (y1 - y0) * 0.42)]
+        cv.poly(cut, BLACK)
+
+
+def _mouth(cv: Canvas, draw: ImageDraw.ImageDraw, cx: float, cy: float, p: Pose) -> None:
     w = p.mouth_width
     th = 9
     if p.mouth_open > 1:
@@ -122,50 +213,150 @@ def _mouth(draw: ImageDraw.ImageDraw, cx: float, cy: float, p: Pose) -> None:
         x = cx + u * w / 2
         y = cy + c * (1 - u * u) - c / 2
         half = (th / 2) * (0.35 + 0.65 * math.sqrt(max(0.0, 1 - u * u)))
-        top.append(((x) * SS, (y - half) * SS))
-        bottom.append(((x) * SS, (y + half) * SS))
+        top.append((x * SS, (y - half) * SS))
+        bottom.append((x * SS, (y + half) * SS))
     draw.polygon(top + bottom[::-1], fill=WHITE)
     for u in (-1, 1):
-        x, y = cx + u * w / 2, cy - c / 2
-        r = th * 0.35 / 2
-        draw.ellipse([(x - r) * SS, (y - r) * SS, (x + r) * SS, (y + r) * SS], fill=WHITE)
+        cv.circle((cx + u * w / 2, cy - c / 2), th * 0.35 / 2, WHITE)
 
 
-def render_pose(p: Pose) -> Image.Image:
-    W, H = LANDSCAPE
-    img = Image.new("RGB", (W * SS, H * SS), BLACK)
-    draw = ImageDraw.Draw(img)
+def _cycle(t: float, period: float, duration: float, loop: bool) -> float:
+    """Phase 0..1 of a repeating effect; for loops the period is snapped so it repeats seamlessly."""
+    if loop and duration > 0:
+        period = duration / max(1, round(duration / period))
+    return (t / period) % 1.0
+
+
+def _face(cv: Canvas, draw: ImageDraw.ImageDraw, p: Pose, t: float, duration: float, loop: bool) -> None:
     ox, oy = p.look_x, p.look_y + p.bounce
     eye_bottom = 195 + oy
     for ex in (112, 348):
-        _eye(draw, ex + ox, eye_bottom, p)
+        _eye(cv, draw, ex + ox, eye_bottom, p, inner_right=ex < 228)
     if p.blush > 0.05:
-        a = int(255 * min(1.0, p.blush))
-        blush = tuple(int(c * a / 255) for c in BLUSH_PINK)
+        blush = lerp_color(BLACK, BLUSH_PINK, min(1.0, p.blush))
         for ex in (112, 348):
             bx, by = ex + ox + (-8 if ex < 228 else 8), eye_bottom + 14
             for i in range(5):  # short slanted strokes, like the upstream blush
                 x0 = bx - 34 + i * 14
-                draw.line([x0 * SS, (by + 8) * SS, (x0 + 12) * SS, (by - 5) * SS], fill=blush, width=4 * SS)
-    _mouth(draw, 228 + ox * 0.6, 195 + oy * 0.6 + (8 if p.mouth_open > 1 else 0), p)
+                cv.capsule((x0, by + 8), (x0 + 12, by - 5), 2, blush)
+    if p.tears > 0.05:
+        ph = _cycle(t, 0.7, duration, loop)
+        for ex in (112, 348):
+            x = ex + ox + (22 if ex < 228 else -22)
+            for k in (0.0, 0.5):
+                q = (ph + k) % 1.0
+                y = eye_bottom + 4 + q * 70
+                size = 7 * min(1.0, p.tears) * (1 - 0.3 * q)
+                cv.poly(drop_points(x, y, size), lerp_color(BLUE, BLACK, max(0.0, q - 0.7) / 0.3))
+    if p.sweat > 0.05:
+        q = _cycle(t, 1.6, duration, loop)
+        x, y = 420 + ox, 70 + oy + 30 * q
+        size = 9 * min(1.0, p.sweat)
+        cv.poly(drop_points(x, y, size), BLUE_LIGHT)
+        cv.circle((x - 3, y - 1), size * 0.3, WHITE)
+    _mouth(cv, draw, 228 + ox * 0.6, 195 + oy * 0.6 + (8 if p.mouth_open > 1 else 0), p)
+
+
+# --- tracks (hands and props) ---------------------------------------------------
+
+def _track_xf(track: Track, states: dict[str, dict], tracks_by_name: dict[str, Track], t: float, depth: int = 0) -> tuple[Xf, dict]:
+    st = states.setdefault(id(track), track_state(track, t))
+    show = max(0.0, st["show"])
+    xf = Xf(st["x"], st["y"], st["rot"], st["scale"] * show, mirror=(track.type == "hand" and track.side == "left"))
+    if track.attach_to:
+        if depth > 4 or track.attach_to not in tracks_by_name:
+            raise ValueError(f"attach_to '{track.attach_to}' does not name another track")
+        parent_xf, _ = _track_xf(tracks_by_name[track.attach_to], states, tracks_by_name, t, depth + 1)
+        px, py = parent_xf((st["x"], st["y"]))
+        xf = Xf(px, py, parent_xf.rot + st["rot"], st["scale"] * show * (parent_xf.scale or 1), xf.mirror)
+    return xf, st
+
+
+def _draw_track(cv: Canvas, track: Track, xf: Xf, st: dict, t: float) -> None:
+    if xf.scale <= 0.02:
+        return
+    if track.type == "hand":
+        draw_hand(cv, xf, st["shape"])
+    else:
+        PROPS[track.type](cv, xf, st["progress"], t, st["variant"])
+
+
+def render_frame(anim: Animation, t: float) -> Image.Image:
+    W, H = LANDSCAPE
+    img = Image.new("RGB", (W * SS, H * SS), BLACK)
+    draw = ImageDraw.Draw(img)
+    cv = Canvas(draw)
+    by_name = {tr.name: tr for tr in anim.tracks if tr.name}
+    states: dict[int, dict] = {}
+    placed = [(tr, *_track_xf(tr, states, by_name, t)) for tr in anim.tracks]
+    for tr, xf, st in placed:
+        if tr.layer == "back":
+            _draw_track(cv, tr, xf, st, t)
+    _face(cv, draw, pose_at(anim.keyframes, t), t, anim.duration_s, anim.loop)
+    for tr, xf, st in placed:
+        if tr.layer != "back":
+            _draw_track(cv, tr, xf, st, t)
     return img.resize((W, H), Image.Resampling.LANCZOS)
 
 
-def render(keyframes: list[Keyframe], duration_s: float, fps: int = FPS, loop: bool = True) -> list[Image.Image]:
+def render_pose(p: Pose, t: float = 0.0) -> Image.Image:
+    """Render a single face pose (no props)."""
+    return render_frame(Animation([Keyframe(0.0, {k: getattr(p, k) for k in POSE_FIELDS})], 1.0, False), t)
+
+
+def render_animation(anim: Animation, fps: int = FPS) -> list[Image.Image]:
     """Render all frames. For loops the last frame is omitted so frame 0 follows seamlessly."""
-    n = round(duration_s * fps)
-    count = n if loop else n + 1
-    return [render_pose(pose_at(keyframes, i / fps)) for i in range(count)]
+    n = round(anim.duration_s * fps)
+    count = n if anim.loop else n + 1
+    return [render_frame(anim, i / fps) for i in range(count)]
 
 
-def load(spec: dict) -> tuple[list[Keyframe], float, bool]:
+def render(keyframes: list[Keyframe], duration_s: float, fps: int = FPS, loop: bool = True) -> list[Image.Image]:
+    return render_animation(Animation(keyframes, duration_s, loop), fps)
+
+
+# --- loading ------------------------------------------------------------------
+
+def _keyframes(raw: list[dict], where: str, flat: bool) -> list[Keyframe]:
+    out = []
+    for k in raw:
+        if "t" not in k:
+            raise ValueError(f"{where}: every keyframe needs 't'")
+        pose = {n: v for n, v in k.items() if n not in ("t", "ease")} if flat else k.get("pose", {})
+        out.append(Keyframe(t=float(k["t"]), pose=pose, ease=k.get("ease", "inOut")))
+    if not out:
+        raise ValueError(f"{where}: keyframes must not be empty")
+    if not math.isclose(out[0].t, 0):
+        out.insert(0, Keyframe(t=0.0))
+    return out
+
+
+def load_animation(spec: dict) -> Animation:
     """Parse a keyframes.json document."""
-    kfs = [Keyframe(t=float(k["t"]), pose=k.get("pose", {}), ease=k.get("ease", "inOut")) for k in spec["keyframes"]]
-    if not kfs:
-        raise ValueError("keyframes must not be empty")
     duration = float(spec["duration_s"])
     if not 0.2 <= duration <= 12:
         raise ValueError("duration_s must be between 0.2 and 12 seconds")
-    if math.isclose(kfs[0].t, 0) is False:
-        kfs.insert(0, Keyframe(t=0.0))
-    return kfs, duration, bool(spec.get("loop", True))
+    tracks = []
+    for i, raw in enumerate(spec.get("props", [])):
+        kind = raw.get("type", "")
+        if kind != "hand" and kind not in PROPS:
+            raise ValueError(f"props[{i}]: unknown type '{kind}', use 'hand' or one of {sorted(PROPS)}")
+        tr = Track(type=kind, keyframes=_keyframes(raw.get("keyframes", []), f"props[{i}]", flat=True),
+                   name=raw.get("name", ""), side=raw.get("side", "right"), layer=raw.get("layer", "front"),
+                   attach_to=raw.get("attach_to", ""))
+        if tr.side not in ("left", "right") or tr.layer not in ("front", "back"):
+            raise ValueError(f"props[{i}]: side must be left/right, layer front/back")
+        for kf in tr.keyframes:
+            shape = kf.pose.get("shape")
+            if kind == "hand" and shape is not None and shape not in GLOVES:
+                raise ValueError(f"props[{i}]: unknown hand shape '{shape}', use one of {HAND_SHAPES}")
+        tracks.append(tr)
+    anim = Animation(_keyframes(spec["keyframes"], "keyframes", flat=False), duration, bool(spec.get("loop", True)), tracks)
+    render_frame(anim, 0.0)  # validates every parameter name up front
+    return anim
+
+
+def load(spec: dict) -> tuple[list[Keyframe], float, bool]:
+    """Backwards-compatible: face keyframes only."""
+    anim = load_animation(spec)
+    return anim.keyframes, anim.duration_s, anim.loop

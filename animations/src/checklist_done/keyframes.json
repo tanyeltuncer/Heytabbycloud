@@ -1,0 +1,222 @@
+{
+  "duration_s": 4.2,
+  "loop": false,
+  "keyframes": [
+    {
+      "t": 0.0,
+      "pose": {
+        "mouth_curve": 10
+      }
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "look_x": 14,
+        "look_y": 10,
+        "eye_open": 0.8,
+        "mouth_curve": 4,
+        "mouth_width": 70
+      },
+      "ease": "inOut"
+    },
+    {
+      "t": 1.1,
+      "pose": {
+        "bounce": -3
+      }
+    },
+    {
+      "t": 1.3,
+      "pose": {
+        "bounce": 0
+      }
+    },
+    {
+      "t": 1.7,
+      "pose": {
+        "bounce": -3
+      }
+    },
+    {
+      "t": 1.9,
+      "pose": {
+        "bounce": 0
+      }
+    },
+    {
+      "t": 2.3,
+      "pose": {
+        "bounce": -3
+      }
+    },
+    {
+      "t": 2.7,
+      "pose": {
+        "eye_shape": "happy",
+        "look_x": 0,
+        "look_y": 0,
+        "bounce": -10,
+        "squash": 0.92,
+        "mouth_open": 14,
+        "mouth_width": 60,
+        "blush": 1
+      },
+      "ease": "out"
+    },
+    {
+      "t": 3.0,
+      "pose": {
+        "bounce": 3,
+        "squash": 1.1
+      },
+      "ease": "in"
+    },
+    {
+      "t": 3.3,
+      "pose": {
+        "bounce": 0,
+        "squash": 1.0
+      },
+      "ease": "back"
+    },
+    {
+      "t": 3.8,
+      "pose": {
+        "eye_shape": "pill",
+        "eye_open": 1,
+        "mouth_open": 0,
+        "mouth_width": 94,
+        "mouth_curve": 14
+      },
+      "ease": "hold"
+    },
+    {
+      "t": 4.2,
+      "pose": {
+        "blush": 0.3
+      }
+    }
+  ],
+  "props": [
+    {
+      "type": "checklist",
+      "name": "board",
+      "keyframes": [
+        {
+          "t": 0.0,
+          "x": 372,
+          "y": 330,
+          "scale": 0.85,
+          "rot": 8,
+          "progress": 0
+        },
+        {
+          "t": 0.5,
+          "y": 238,
+          "ease": "out"
+        },
+        {
+          "t": 0.7,
+          "progress": 0
+        },
+        {
+          "t": 1.1,
+          "progress": 1,
+          "ease": "out"
+        },
+        {
+          "t": 1.7,
+          "progress": 2,
+          "ease": "out"
+        },
+        {
+          "t": 2.3,
+          "progress": 3,
+          "ease": "out"
+        },
+        {
+          "t": 3.6,
+          "y": 238
+        },
+        {
+          "t": 4.2,
+          "y": 340,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "type": "hand",
+      "side": "right",
+      "attach_to": "board",
+      "keyframes": [
+        {
+          "t": 0.0,
+          "x": 34,
+          "y": 40,
+          "rot": 20,
+          "shape": "hold"
+        }
+      ]
+    },
+    {
+      "type": "sparkle",
+      "variant": "gold",
+      "keyframes": [
+        {
+          "t": 0.0,
+          "x": 300,
+          "y": 150,
+          "show": 0
+        },
+        {
+          "t": 2.35,
+          "show": 0
+        },
+        {
+          "t": 2.55,
+          "show": 1.2,
+          "rot": 45,
+          "ease": "back"
+        },
+        {
+          "t": 2.9,
+          "show": 0,
+          "rot": 90
+        }
+      ]
+    },
+    {
+      "type": "hand",
+      "side": "left",
+      "keyframes": [
+        {
+          "t": 0.0,
+          "x": 70,
+          "y": 245,
+          "rot": -10,
+          "shape": "thumbs_up",
+          "show": 0
+        },
+        {
+          "t": 2.6,
+          "show": 0
+        },
+        {
+          "t": 2.9,
+          "show": 1,
+          "ease": "back"
+        },
+        {
+          "t": 3.7,
+          "show": 1
+        },
+        {
+          "t": 4.2,
+          "y": 340,
+          "ease": "in"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "duration_s": 3.0,
+  "loop": true,
+  "keyframes": [
+    {
+      "t": 0.0,
+      "pose": {
+        "look_y": 6,
+        "look_x": -4,
+        "eye_open": 0.55,
+        "mouth_curve": 5,
+        "mouth_width": 70
+      }
+    },
+    {
+      "t": 0.9,
+      "pose": {
+        "look_x": 6
+      },
+      "ease": "inOut"
+    },
+    {
+      "t": 1.0,
+      "pose": {
+        "look_x": -6
+      },
+      "ease": "inOut"
+    },
+    {
+      "t": 1.7,
+      "pose": {
+        "look_x": -4,
+        "bounce": -3
+      },
+      "ease": "inOut"
+    },
+    {
+      "t": 2.1,
+      "pose": {
+        "eye_open": 0.55
+      },
+      "ease": "hold"
+    },
+    {
+      "t": 2.2,
+      "pose": {
+        "eye_open": 0.05
+      },
+      "ease": "in"
+    },
+    {
+      "t": 2.32,
+      "pose": {
+        "eye_open": 0.55
+      },
+      "ease": "out"
+    },
+    {
+      "t": 3.0,
+      "pose": {
+        "bounce": 0
+      },
+      "ease": "inOut"
+    }
+  ],
+  "props": [
+    {
+      "type": "book",
+      "keyframes": [
+        {
+          "t": 0.0,
+          "x": 228,
+          "y": 242,
+          "scale": 1.1,
+          "rot": 0,
+          "variant": "open",
+          "progress": 0
+        },
+        {
+          "t": 1.0,
+          "progress": 0
+        },
+        {
+          "t": 1.6,
+          "progress": 1,
+          "ease": "inOut"
+        }
+      ]
+    },
+    {
+      "type": "hand",
+      "side": "left",
+      "keyframes": [
+        {
+          "t": 0.0,
+          "x": 160,
+          "y": 266,
+          "rot": -25,
+          "shape": "hold"
+        },
+        {
+          "t": 1.5,
+          "y": 263
+        },
+        {
+          "t": 3.0,
+          "y": 266
+        }
+      ]
+    },
+    {
+      "type": "hand",
+      "side": "right",
+      "keyframes": [
+        {
+          "t": 0.0,
+          "x": 296,
+          "y": 266,
+          "rot": 25,
+          "shape": "hold"
+        },
+        {
+          "t": 0.8,
+          "x": 300,
+          "y": 262,
+          "rot": 10
+        },
+        {
+          "t": 1.2,
+          "x": 286,
+          "y": 262,
+          "rot": 5
+        },
+        {
+          "t": 1.6,
+          "x": 296,
+          "y": 266,
+          "rot": 25
+        }
+      ]
+    }
+  ]
+}

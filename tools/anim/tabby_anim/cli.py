@@ -38,8 +38,8 @@ def load_meta(src: Path) -> dict:
 def load_frames(src: Path, meta: dict) -> tuple[list[Image.Image], bool]:
     kf_path = src / "keyframes.json"
     if kf_path.exists():
-        keyframes, duration, loop = rig.load(json.loads(kf_path.read_text(encoding="utf-8")))
-        return rig.render(keyframes, duration, loop=loop), loop
+        anim = rig.load_animation(json.loads(kf_path.read_text(encoding="utf-8")))
+        return rig.render_animation(anim), anim.loop
     pngs = sorted((src / "frames").glob("*.png"))
     if not pngs:
         raise ValueError(f"{src}: needs keyframes.json or frames/*.png")
@@ -138,6 +138,46 @@ def cmd_preview(args: argparse.Namespace) -> int:
     return 0
 
 
+def catalog_sheet() -> Image.Image:
+    """Every eye shape, hand shape and prop on one labelled sheet (for review and docs)."""
+    from .hands import HAND_SHAPES
+    from .props import PROPS
+
+    tiles: list[tuple[str, Image.Image]] = []
+    for shape in rig.EYE_SHAPES:
+        tiles.append((f"eye_shape: {shape}", rig.render_pose(rig.Pose(eye_shape=shape))))
+    tiles.append(("tears + sweat", rig.render_pose(rig.Pose(tears=1, sweat=1, mouth_curve=-8), t=0.3)))
+    tiles.append(("blush + mouth_open", rig.render_pose(rig.Pose(blush=1, mouth_open=16, mouth_width=70, eye_shape="happy"))))
+    progress = {"water_glass": 0.7, "fireworks": 0.6, "book": 0.4, "checklist": 2.7, "clock": 0.3}
+    variant = {"fireworks": "mix", "book": "open"}
+    for shape in HAND_SHAPES:
+        face = rig.Keyframe(0, {"eye_open": 0.0, "mouth_curve": 0, "mouth_width": 40})
+        tr = rig.Track("hand", [rig.Keyframe(0, {"x": 228, "y": 150, "shape": shape, "scale": 1.6})])
+        tiles.append((f"hand: {shape}", rig.render_frame(rig.Animation([face], 1, False, [tr]), 0)))
+    for name in PROPS:
+        face = rig.Keyframe(0, {"eye_open": 0.0, "mouth_curve": 0, "mouth_width": 40})
+        tr = rig.Track(name, [rig.Keyframe(0, {"x": 228, "y": 140, "scale": 1.5,
+                                               "progress": progress.get(name, 0.0), "variant": variant.get(name, "")})])
+        tiles.append((f"prop: {name}", rig.render_frame(rig.Animation([face], 1, False, [tr]), 0.4)))
+    cols, w, h = 5, 228, 140
+    rows = (len(tiles) + cols - 1) // cols
+    sheet = Image.new("RGB", (cols * w, rows * (h + 16)), (45, 45, 45))
+    draw = ImageDraw.Draw(sheet)
+    for k, (label, img) in enumerate(tiles):
+        x, y = (k % cols) * w, (k // cols) * (h + 16)
+        draw.text((x + 4, y + 2), label, fill=(230, 230, 230))
+        sheet.paste(img.resize((w - 4, h - 4)), (x + 2, y + 16))
+    return sheet
+
+
+def cmd_catalog(args: argparse.Namespace) -> int:
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    catalog_sheet().save(out)
+    print(f"catalog written to {out}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="tabby_anim")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -154,5 +194,8 @@ def main(argv: list[str] | None = None) -> int:
     pv.add_argument("--out", required=True)
     pv.add_argument("--count", type=int, default=12)
     pv.set_defaults(func=cmd_preview)
+    cg = sub.add_parser("catalog", help="sheet with every eye shape, hand shape and prop")
+    cg.add_argument("--out", required=True)
+    cg.set_defaults(func=cmd_catalog)
     args = parser.parse_args(argv)
     return args.func(args)
