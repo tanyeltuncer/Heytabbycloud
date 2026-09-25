@@ -223,8 +223,46 @@ def zzz(cv: Canvas, xf: Xf, progress: float, t: float, variant: str) -> None:
         pts = [(x - size, y - size), (x + size, y - size), (x - size, y + size), (x + size, y + size)]
         cv.polyline([xf(p) for p in pts], xf.r(3 + 1.5 * ph), col)
 
+
+STRAW_PATH = [(0, 0), (0, -70)] + [(-12 + 12 * math.cos(math.radians(a)), -70 - 12 * math.sin(math.radians(a)))
+                                   for a in range(10, 91, 20)] + [(-30, -86)]
+STRAW_TIP = STRAW_PATH[-1]
+
+
+def _along(path, frac):
+    """Points of the path from its start up to `frac` of its length."""
+    segs = list(zip(path, path[1:]))
+    lengths = [math.dist(a, b) for a, b in segs]
+    goal = max(0.0, min(1.0, frac)) * sum(lengths)
+    out, run = [path[0]], 0.0
+    for (a, b), L in zip(segs, lengths):
+        if run + L >= goal:
+            k = (goal - run) / L if L else 0
+            out.append((a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k))
+            return out
+        out.append(b)
+        run += L
+    return out
+
+
+def straw(cv: Canvas, xf: Xf, progress: float, t: float, variant: str) -> None:
+    """Bendy striped straw, base at (0, 0), tip at STRAW_TIP (up and to the left).
+    progress 0..1 = how far the drink has risen inside the straw (sipping)."""
+    pts = [xf(p) for p in STRAW_PATH]
+    stripe = NAMED_COLORS.get(variant, RED)
+    cv.polyline(pts, xf.r(9), WHITE)
+    # diagonal stripes: short segments every 12 px along the straw
+    total = sum(math.dist(a, b) for a, b in zip(STRAW_PATH, STRAW_PATH[1:]))
+    for i in range(int(total // 12)):
+        seg = _along(STRAW_PATH, (i * 12 + 4) / total)[-1]
+        seg2 = _along(STRAW_PATH, (i * 12 + 8) / total)[-1]
+        cv.capsule(xf(seg), xf(seg2), xf.r(3.2), stripe)
+    if progress > 0.01:
+        cv.polyline([xf(p) for p in _along(STRAW_PATH, progress)], xf.r(4.2), BLUE)
+
+
 PROPS = {
     "water_glass": water_glass, "bottle": bottle, "water_stream": water_stream, "water_drop": water_drop, "fireworks": fireworks, "book": book,
     "checklist": checklist, "coffee": coffee, "heart": heart, "sparkle": sparkle, "star": star,
-    "trophy": trophy, "clock": clock, "zzz": zzz,
+    "trophy": trophy, "clock": clock, "zzz": zzz, "straw": straw,
 }

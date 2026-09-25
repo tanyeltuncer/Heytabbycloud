@@ -1,0 +1,185 @@
+{
+  "duration_s": 4.4,
+  "loop": false,
+  "keyframes": [
+    {
+      "t": 0.0,
+      "pose": {
+        "mouth_curve": 12
+      }
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "eye_scale": 1.1,
+        "look_y": 8
+      },
+      "ease": "out"
+    },
+    {
+      "t": 1.0,
+      "pose": {
+        "face_y": -26,
+        "look_y": 10,
+        "mouth_width": 26,
+        "mouth_curve": 0,
+        "eye_scale": 1.0,
+        "eye_open": 0.55,
+        "blush": 0.4
+      },
+      "ease": "inOut"
+    },
+    {
+      "t": 1.3,
+      "pose": {
+        "mouth_width": 20
+      },
+      "ease": "inOut"
+    },
+    {
+      "t": 1.6,
+      "pose": {
+        "mouth_width": 26
+      }
+    },
+    {
+      "t": 1.9,
+      "pose": {
+        "mouth_width": 20
+      }
+    },
+    {
+      "t": 2.2,
+      "pose": {
+        "mouth_width": 26
+      }
+    },
+    {
+      "t": 2.5,
+      "pose": {
+        "mouth_width": 20
+      }
+    },
+    {
+      "t": 2.8,
+      "pose": {
+        "mouth_width": 26
+      }
+    },
+    {
+      "t": 3.05,
+      "pose": {
+        "eye_open": 1,
+        "eye_scale": 1.15,
+        "mouth_width": 22
+      },
+      "ease": "out"
+    },
+    {
+      "t": 3.5,
+      "pose": {
+        "eye_shape": "happy",
+        "eye_scale": 1.0,
+        "face_y": 0,
+        "look_y": 0,
+        "bounce": 4,
+        "squash": 1.08,
+        "mouth_open": 14,
+        "mouth_width": 60,
+        "blush": 1
+      },
+      "ease": "out"
+    },
+    {
+      "t": 3.8,
+      "pose": {
+        "bounce": 0,
+        "squash": 1.0
+      },
+      "ease": "back"
+    },
+    {
+      "t": 4.4,
+      "pose": {
+        "eye_shape": "pill",
+        "mouth_open": 0,
+        "mouth_width": 94,
+        "mouth_curve": 14,
+        "blush": 0.3
+      },
+      "ease": "hold"
+    }
+  ],
+  "props": [
+    {
+      "type": "straw",
+      "attach_to": "glass",
+      "keyframes": [
+        {
+          "t": 0.0,
+          "x": 8,
+          "y": 18,
+          "progress": 0
+        },
+        {
+          "t": 1.1,
+          "progress": 0
+        },
+        {
+          "t": 1.4,
+          "progress": 1,
+          "ease": "out"
+        },
+        {
+          "t": 2.85,
+          "progress": 1
+        },
+        {
+          "t": 3.05,
+          "progress": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "type": "water_glass",
+      "name": "glass",
+      "keyframes": [
+        {
+          "t": 0.0,
+          "x": 287.5,
+          "y": 390,
+          "scale": 1.25,
+          "progress": 0.95,
+          "show": 1
+        },
+        {
+          "t": 0.8,
+          "x": 257.5,
+          "y": 260.0,
+          "ease": "back"
+        },
+        {
+          "t": 1.3,
+          "progress": 0.95
+        },
+        {
+          "t": 2.9,
+          "progress": 0.05,
+          "ease": "linear"
+        },
+        {
+          "t": 3.5,
+          "x": 257.5,
+          "y": 260.0
+        },
+        {
+          "t": 4.3,
+          "x": 297.5,
+          "y": 395,
+          "ease": "in"
+        }
+      ]
+    }
+  ]
+}

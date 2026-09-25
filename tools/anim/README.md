@@ -104,6 +104,7 @@ Klassische Formen: Klassische Cartoon-Handschuhe: **drei pummelige Finger und ei
 | `water_glass` | Wasserstand 0–1 (Oberfläche bleibt beim Kippen waagerecht) | – | 52 × 70 |
 | `bottle` | Füllstand 0–1 (Oberfläche waagerecht). Öffnung bei lokal (0, −64) | Etikettfarbe | 40 × 110 |
 | `water_stream` | 0–1 Strahl wächst nach unten, 1–2 Ende fällt ab. Immer senkrecht, auch angehängt | – | 100 lang |
+| `straw` | wie weit das Getränk im Halm hochgestiegen ist (0–1) | Streifenfarbe | Knick-Strohhalm, Fuß bei (0, 0), Spitze bei (−30, −86). Mit `attach_to` ins Glas hängen (`x: 8, y: 18`) und **vor** dem Glas in die Liste, dann liegt er im Glas |
 | `water_drop` | – | Farbe | 24 × 32 |
 | `fireworks` | 0–0,35 Rakete steigt, 0,35–1 Explosion und Verblassen | `gold`, `pink`, `blue`, `green`, `purple`, `mix` | Ø 150 |
 | `book` | offen: jede ganze Zahl = eine Seite umgeblättert | `open` (Standard), `closed` | 124 × 66 |
