@@ -128,7 +128,7 @@ Beispiele mit Teilen: `drink_straw` (Standard fürs Trinken), `refill_water`, `f
 
 **Noch offen:** schräge Blinzel-Striche wie im Original, Text, Körper. Jede neue Form ist eine kleine Zeichenfunktion und danach für die KI nur ein weiterer Parameter.
 
-**In Claude Code (umgesetzt):** Skill `/tabby-animation <Beschreibung>` (`.claude/skills/tabby-animation/SKILL.md`). Getestet mit „Tabby niest“ → `animations/src/sneeze` (47 Frames, 7 Farben, 45 KB), nach zwei Korrekturrunden anhand des Kontaktbogens.
+**In Claude Code (umgesetzt):** Skill `/tabby-animation <Beschreibung>` (`.claude/skills/tabby-animation/SKILL.md`). Er erstellt neue Clips mit dem Rig, ändert eigene Clips und bearbeitet Original-Clips per `edit.json` (kürzen, Tempo, Loop, umfärben, Gegenstände darüberlegen; die Originale bleiben unverändert auf dem Gerät). Getestet mit „Tabby niest“ → `animations/src/sneeze` (47 Frames, 7 Farben, 45 KB), nach zwei Korrekturrunden anhand des Kontaktbogens.
 
 **In der Web-App (F-23):** Beschreibung eintippen → Claude erzeugt `keyframes.json` (Structured Output gegen das Schema des Rigs) → Backend rendert eine Vorschau → im Simulator ansehen → „Übernehmen“ legt einen Pull Request an, und die CI baut das Asset-Pack.
 

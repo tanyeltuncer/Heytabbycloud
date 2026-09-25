@@ -3,9 +3,10 @@
     python -m tabby_anim build animations/src --out dist/animations
     python -m tabby_anim extract some.gif --out frames/
 
-A source directory `animations/src/<id>/` contains `meta.json` and either
-`keyframes.json` (procedural face rig) or `frames/*.png` (456 x 280, 24 fps,
-black background) exported from any animation tool.
+A source directory `animations/src/<id>/` contains `meta.json` and one of
+`keyframes.json` (procedural face rig), `edit.json` (changes to an original
+Taby clip, see edit.py) or `frames/*.png` (456 x 280, 24 fps, black
+background) exported from any animation tool.
 """
 
 from __future__ import annotations
@@ -18,8 +19,10 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from . import gif, rig
+from . import edit, gif, originals, rig
 
+# assets partition minus the 84 originals and the icons (docs/spec/animationen.md §5)
+FREE_KB = 1200
 ID_RE = re.compile(r"^[a-z0-9_]{1,80}$")
 
 
@@ -40,9 +43,12 @@ def load_frames(src: Path, meta: dict) -> tuple[list[Image.Image], bool]:
     if kf_path.exists():
         anim = rig.load_animation(json.loads(kf_path.read_text(encoding="utf-8")))
         return rig.render_animation(anim), anim.loop
+    edit_path = src / "edit.json"
+    if edit_path.exists():
+        return edit.apply(json.loads(edit_path.read_text(encoding="utf-8")), originals.load)
     pngs = sorted((src / "frames").glob("*.png"))
     if not pngs:
-        raise ValueError(f"{src}: needs keyframes.json or frames/*.png")
+        raise ValueError(f"{src}: needs keyframes.json, edit.json or frames/*.png")
     return [Image.open(p).convert("RGB") for p in pngs], bool(meta.get("loop", False))
 
 
@@ -88,6 +94,9 @@ def cmd_build(args: argparse.Namespace) -> int:
         except Exception as exc:  # report every source, fail at the end
             failed = True
             print(f"FAIL {src.name}: {exc}", file=sys.stderr)
+    if len(report) > 1:
+        total = sum(r["kb"] for r in report.values())
+        print(f"total {total:.0f} KB of about {FREE_KB} KB free on the device (with all 84 originals kept)")
     Path(args.out).mkdir(parents=True, exist_ok=True)
     (Path(args.out) / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return 1 if failed else 0
@@ -135,6 +144,41 @@ def cmd_preview(args: argparse.Namespace) -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     contact_sheet(frames, times, count=args.count).save(out)
     print(f"preview written to {out} ({len(frames)} frames)")
+    return 0
+
+
+def cmd_originals(args: argparse.Namespace) -> int:
+    if args.action == "list":
+        for anim_id, e in sorted(originals.catalog().items()):
+            kind = "loop" if e.get("loop_policy") == "loop" else "once"
+            print(f"{anim_id:32s} {e['duration_ms'] / 1000:5.2f} s  {kind:4s} {e['byte_length'] / 1024:6.0f} KB")
+        return 0
+    if not args.id:
+        print("need an animation id", file=sys.stderr)
+        return 2
+    orig = originals.load(args.id)
+    frames = orig.frames
+    if args.action == "show":
+        out = Path(args.out or f"../../dist/originals/{args.id}.sheet.png")
+        out.parent.mkdir(parents=True, exist_ok=True)
+        times = [round(i * 1000 / gif.FPS) for i in range(len(frames))]
+        contact_sheet(frames, times, count=args.count).save(out)
+        print(f"{args.id}: {len(frames)} frames, {len(frames) / gif.FPS:.2f} s, "
+              f"{'loop' if orig.loop else 'play_once'} -> {out}")
+    elif args.action == "colors":
+        mid = frames[len(frames) // 2]
+        seen: dict[str, int] = {}
+        for f in frames[:: max(1, len(frames) // 12)] + [mid]:
+            for c, n in edit.colors_of(f, 12):
+                seen[c] = seen.get(c, 0) + n
+        for c, n in sorted(seen.items(), key=lambda x: -x[1])[:12]:
+            print(f"{c}  {n} px")
+    elif args.action == "frames":
+        out = Path(args.out or f"{args.id}_frames")
+        out.mkdir(parents=True, exist_ok=True)
+        for i, f in enumerate(frames):
+            f.save(out / f"{i:04d}.png")
+        print(f"{len(frames)} frames (24 fps, 456 x 280) -> {out}")
     return 0
 
 
@@ -195,6 +239,12 @@ def main(argv: list[str] | None = None) -> int:
     pv.add_argument("--out", required=True)
     pv.add_argument("--count", type=int, default=12)
     pv.set_defaults(func=cmd_preview)
+    og = sub.add_parser("originals", help="the 84 upstream Taby clips: list, show, colors, frames")
+    og.add_argument("action", choices=["list", "show", "colors", "frames"])
+    og.add_argument("id", nargs="?")
+    og.add_argument("--out")
+    og.add_argument("--count", type=int, default=12)
+    og.set_defaults(func=cmd_originals)
     cg = sub.add_parser("catalog", help="sheet with every eye shape, hand shape and prop")
     cg.add_argument("--out", required=True)
     cg.set_defaults(func=cmd_catalog)

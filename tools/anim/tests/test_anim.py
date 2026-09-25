@@ -6,7 +6,11 @@ from pathlib import Path
 
 from PIL import Image
 
-from tabby_anim import cli, gif, rig
+import hashlib
+import os
+from unittest import mock
+
+from tabby_anim import cli, edit, gif, originals, rig
 
 REPO = Path(__file__).resolve().parents[3]
 SOURCES = REPO / "animations" / "src"
@@ -270,6 +274,117 @@ class SpriteHandTests(unittest.TestCase):
             finally:
                 del os.environ["TABBY_HAND_SPRITES"]
                 hands._sprite_cache.clear()
+
+
+def fake_pack(root: Path, clips: dict) -> Path:
+    """Minimal upstream-style asset pack: catalog.json + a/<sha8>.gif."""
+    (root / "a").mkdir(parents=True, exist_ok=True)
+    entries = []
+    for anim_id, (frames, loop) in clips.items():
+        enc = gif.encode(frames, loop=loop)
+        rel = f"a/{enc.sha256[:8]}.gif"
+        (root / rel).write_bytes(enc.data)
+        entries.append({"id": anim_id, "duration_ms": enc.duration_ms, "loop_policy": "loop" if loop else "play_once",
+                        "relative_path": rel, "byte_length": len(enc.data), "sha256": enc.sha256})
+    (root / "catalog.json").write_text(json.dumps({"animations": entries}))
+    return root
+
+
+def ramp(n):
+    """n frames with a white bar moving right, and one blue square (for recolor)."""
+    out = []
+    for i in range(n):
+        f = solid((0, 0, 0))
+        f.paste((255, 255, 255), (10 + i * 4, 100, 30 + i * 4, 180))
+        f.paste((0, 151, 203), (300, 40, 360, 100))
+        out.append(f)
+    return out
+
+
+class OriginalsAndEditTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.frames = ramp(24)
+        self.frozen = [self.frames[0]] * 6 + self.frames[1:]  # identical frames get merged in the file
+        fake_pack(Path(self.tmp.name), {"base": (self.frames, True), "other": (self.frozen, False)})
+        self.env = mock.patch.dict(os.environ, {"TABBY_ORIGINALS": self.tmp.name})
+        self.env.start()
+
+    def tearDown(self):
+        self.env.stop()
+        self.tmp.cleanup()
+
+    def run_ops(self, ops, **extra):
+        return edit.apply({"base": "base", "ops": ops, **extra}, originals.load)
+
+    def test_load_is_pixel_identical_and_keeps_timeline(self):
+        orig = originals.load("base")
+        self.assertTrue(orig.loop)
+        self.assertEqual(len(orig.frames), 24)
+        for a, b in zip(orig.frames, self.frames):
+            self.assertEqual(a.tobytes(), b.tobytes())
+        # merged duplicate frames are expanded back to 24 fps
+        self.assertEqual(len(originals.load("other").frames), len(self.frozen))
+
+    def test_checksum_mismatch_is_rejected(self):
+        cat = originals.catalog()
+        path = Path(self.tmp.name) / cat["base"]["relative_path"]
+        path.write_bytes(path.read_bytes() + b"x")
+        with self.assertRaises(ValueError):
+            originals.load("base")
+
+    def test_timing_ops(self):
+        f, loop = self.run_ops([{"op": "trim", "start_s": 0.25, "end_s": 0.75}])
+        self.assertEqual(len(f), 12)
+        self.assertEqual(f[0].tobytes(), self.frames[6].tobytes())
+        self.assertTrue(loop)
+        self.assertEqual(len(self.run_ops([{"op": "speed", "factor": 2}])[0]), 12)
+        self.assertEqual(len(self.run_ops([{"op": "speed", "factor": 0.5}])[0]), 48)
+        rev, _ = self.run_ops([{"op": "reverse"}])
+        self.assertEqual(rev[0].tobytes(), self.frames[-1].tobytes())
+        self.assertEqual(len(self.run_ops([{"op": "pingpong"}])[0]), 24 + 22)
+        self.assertEqual(len(self.run_ops([{"op": "hold", "at_s": 0.5, "duration_s": 0.5}])[0]), 36)
+        self.assertEqual(len(self.run_ops([{"op": "repeat", "times": 3}])[0]), 72)
+        cat, loop = self.run_ops([{"op": "concat", "base": "other", "end_s": 0.5}], loop=False)
+        self.assertEqual(len(cat), 36)
+        self.assertFalse(loop)
+
+    def test_image_ops(self):
+        f, _ = self.run_ops([{"op": "recolor", "from": "#0097cb", "to": "#e0780a"}])
+        self.assertEqual(f[3].getpixel((330, 70)), (224, 120, 10))
+        self.assertEqual(f[3].getpixel((30, 140)), (255, 255, 255))  # other colours untouched
+        f, _ = self.run_ops([{"op": "erase", "rect": [290, 30, 370, 110], "from_s": 0.5}])
+        self.assertEqual(f[5].getpixel((330, 70)), (0, 151, 203))
+        self.assertEqual(f[12].getpixel((330, 70)), (0, 0, 0))
+        f, _ = self.run_ops([{"op": "move", "x": 40}])
+        self.assertEqual(f[0].getpixel((330 + 40, 70)), (0, 151, 203))
+
+    def test_overlay_draws_props_without_a_second_face(self):
+        heart = [{"type": "heart", "keyframes": [{"t": 0, "x": 228, "y": 60, "variant": "pink"}]}]
+        f, _ = self.run_ops([{"op": "overlay", "from_s": 0.5, "props": heart}])
+        self.assertEqual(f[0].getpixel((228, 60)), (0, 0, 0))
+        self.assertNotEqual(f[20].getpixel((228, 60)), (0, 0, 0))
+        # everything outside the heart is still the original
+        self.assertEqual(f[20].getpixel((330, 70)), (0, 151, 203))
+        self.assertEqual(f[20].getpixel((228, 240)), (0, 0, 0))
+
+    def test_errors(self):
+        for ops in ([{"op": "explode"}], [{"op": "trim", "start_s": 5}], [{"op": "speed", "factor": 9}],
+                    [{"op": "overlay", "props": [{"type": "heart", "x": 1, "keyframes": [{"t": 0}]}]}]):
+            with self.subTest(ops=ops), self.assertRaises(ValueError):
+                self.run_ops(ops)
+        with self.assertRaises(KeyError):
+            edit.apply({"base": "nope"}, originals.load)
+
+    def test_edit_source_builds(self):
+        with tempfile.TemporaryDirectory() as d:
+            src = Path(d) / "remix"
+            src.mkdir()
+            (src / "meta.json").write_text(json.dumps({"id": "remix", "max_kb": 50}))
+            (src / "edit.json").write_text(json.dumps({"base": "base", "ops": [{"op": "reverse"}]}))
+            result = cli.build_one(src, Path(d) / "out")
+            self.assertEqual(result["catalog_entry"]["loop_policy"], "loop")
+            self.assertEqual(result["frames"], 24)
 
 
 if __name__ == "__main__":

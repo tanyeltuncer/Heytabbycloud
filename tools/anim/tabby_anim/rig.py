@@ -86,6 +86,7 @@ class Animation:
     duration_s: float
     loop: bool = True
     tracks: list[Track] = field(default_factory=list)
+    face: bool = True  # False = props only (overlays on original clips)
 
 
 def _ease(name: str, x: float) -> float:
@@ -376,10 +377,10 @@ def render_frame(anim: Animation, t: float) -> Image.Image:
         ops = _draw_order([p for p in placed if (p[0].layer == "back") == (layer == "back")])
         for tr, xf, st, which in ops:
             _draw_track(cv, tr, xf, st, t, which)
-        if layer == "back":
+        if layer == "back" and anim.face:
             _face(cv, draw, pose_at(anim.keyframes, t), t, anim.duration_s, anim.loop)
     pose = pose_at(anim.keyframes, t)
-    if pose.mouth_o > 1 and placed:
+    if anim.face and pose.mouth_o > 1 and placed:
         # redraw the lips over the props, so a straw reads as going *into* the mouth
         _mouth_o(cv, mouth_center(pose), pose.mouth_o * pose.face_scale, pose.face_scale, lips_only=True)
     return img.resize((W, H), Image.Resampling.LANCZOS)
@@ -425,6 +426,10 @@ def load_animation(spec: dict) -> Animation:
     tracks = []
     for i, raw in enumerate(spec.get("props", [])):
         kind = raw.get("type", "")
+        extra = set(raw) - {"type", "name", "side", "layer", "attach_to", "keyframes"}
+        if extra:
+            raise ValueError(f"props[{i}]: unknown track field(s) {sorted(extra)}; "
+                             "x, y, rot, scale, show, progress, shape, variant, arm belong in the keyframes")
         if kind != "hand" and kind not in PROPS:
             raise ValueError(f"props[{i}]: unknown type '{kind}', use 'hand' or one of {sorted(PROPS)}")
         tr = Track(type=kind, keyframes=_keyframes(raw.get("keyframes", []), f"props[{i}]", flat=True),

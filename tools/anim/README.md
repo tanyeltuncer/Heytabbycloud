@@ -10,6 +10,10 @@ python -m tabby_anim build ../../animations/src --out ../../dist/animations
 python -m tabby_anim extract some.gif --out frames/   # GIF → quer liegende PNG-Frames
 python -m tabby_anim preview ../../animations/src/<id> --out sheet.png   # Kontaktbogen mit Zeitstempeln
 python -m tabby_anim catalog --out catalog.png                     # alle Augenformen, Hände, Gegenstände
+python -m tabby_anim originals list                  # die 84 Original-Clips (Länge, Loop, KB)
+python -m tabby_anim originals show drink_water      # Kontaktbogen eines Originals → dist/originals/
+python -m tabby_anim originals colors drink_water    # häufigste Farben (für recolor)
+python -m tabby_anim originals frames drink_water --out f/   # als PNG-Frames (24 fps, quer) zum Bearbeiten
 python -m unittest discover -s tests -v
 ```
 
@@ -22,8 +26,9 @@ Lokal ist das optional: Der Workflow `.github/workflows/animations.yml` baut bei
 | Datei | Pflicht | Inhalt |
 |---|---|---|
 | `meta.json` | ja | `id` (= Ordnername, `a-z0-9_`), `label`, `max_colors` (Standard 16), `max_kb` (Standard 150), optional `prompt` (Beschreibung, aus der die Keyframes entstanden sind), `loop` (nur für PNG-Quellen) |
-| `keyframes.json` | entweder | Face-Rig-Animation (siehe unten) |
-| `frames/*.png` | oder | Export aus einem Animationsprogramm: **456 × 280 quer**, 24 fps, schwarzer Hintergrund |
+| `keyframes.json` | eins davon | Face-Rig-Animation (siehe unten) |
+| `edit.json` | eins davon | Änderungen an einem Original-Clip (siehe „Originale bearbeiten“) |
+| `frames/*.png` | eins davon | Export aus einem Animationsprogramm: **456 × 280 quer**, 24 fps, schwarzer Hintergrund |
 
 ## Face-Rig: `keyframes.json`
 
@@ -121,3 +126,33 @@ Klassische Formen: Klassische Cartoon-Handschuhe: **drei pummelige Finger und ei
 **Gießen:** `water_stream` mit `attach_to` an die Flasche hängen (`x: 0, y: -66`), Flasche um ca. −115° kippen, Strahl und Füllstände zeitlich koppeln (Beispiel `refill_water`).
 
 Tipp: `show` von 0 auf 1 mit `ease: "back"` = Aufploppen. Eine Spur vor ihrem Auftritt mit `show: 0` verstecken, sonst ist sie ab 0 s sichtbar (bei `fireworks` stünde die Rakete schon unten bereit).
+
+## Originale bearbeiten: `edit.json`
+
+Die 84 Original-Clips werden nicht ins Repo kopiert (Lizenz, Guardrail L2). Beim ersten Gebrauch holt `tabby_anim` das Asset-Pack `assets/amoled-1.64` aus [TRIIIS-LABS/firmware-taby](https://github.com/TRIIIS-LABS/firmware-taby) in den Cache `~/.cache/tabby_anim` (sparse, nur dieser Ordner). Jede Datei wird gegen die sha256 im Upstream-Katalog geprüft. Mit `TABBY_ORIGINALS=<pfad>/assets/amoled-1.64` lässt sich eine vorhandene Kopie nutzen. Beim Laden werden die Clips auf 24 fps ausgerollt; zusammengelegte gleiche Bilder werden also wieder einzeln.
+
+```json
+{ "base": "drink_water", "loop": false,
+  "ops": [ { "op": "trim", "end_s": 5.2 },
+           { "op": "recolor", "from": "#0097cb", "to": "#e0780a", "tolerance": 60 } ] }
+```
+
+Die Operationen laufen der Reihe nach. Zeiten gelten für den Stand nach den vorigen Operationen.
+
+| `op` | Felder | Wirkung |
+|---|---|---|
+| `trim` | `start_s`, `end_s` | Ausschnitt behalten |
+| `speed` | `factor` 0,25–4 | schneller/langsamer (Bilder werden ausgelassen oder wiederholt) |
+| `reverse` | – | rückwärts |
+| `pingpong` | – | vor und zurück (nahtloser Loop) |
+| `hold` | `at_s`, `duration_s` | Standbild einfügen |
+| `repeat` | `times` | wiederholen |
+| `concat` | `base`, `start_s`, `end_s` | Ausschnitt eines anderen Originals anhängen |
+| `recolor` | `from`, `to`, `tolerance`, `from_s`, `to_s` | Farbe tauschen; geglättete Kanten (Farbe × Helligkeit) werden mitgetauscht |
+| `move` | `x`, `y`, `scale`, `from_s`, `to_s` | ganzes Bild verschieben/skalieren |
+| `erase` | `rect` [x0, y0, x1, y1], `from_s`, `to_s` | Bereich schwarz machen |
+| `overlay` | `props`, `from_s`, `to_s` | Rig-Spuren (Hände, Gegenstände wie oben) darüberlegen, ohne Gesicht; `t` zählt ab `from_s`; Schwarz ist durchsichtig |
+
+`from_s`/`to_s` fehlen → ganzer Clip. Beispiel: `animations/src/drink_juice`.
+
+**Speicher:** `build` über alle Quellen zeigt am Ende die Summe. Neben den 84 Originalen sind auf dem Gerät nur etwa 1,2 MB frei (`docs/spec/animationen.md` §5).

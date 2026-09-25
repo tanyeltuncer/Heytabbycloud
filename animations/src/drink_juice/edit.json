@@ -1,0 +1,53 @@
+{
+  "base": "drink_water",
+  "ops": [
+    {
+      "op": "trim",
+      "end_s": 5.2
+    },
+    {
+      "op": "recolor",
+      "from": "#0097cb",
+      "to": "#e0780a",
+      "tolerance": 60
+    },
+    {
+      "op": "recolor",
+      "from": "#00cafd",
+      "to": "#ffb238",
+      "tolerance": 60
+    },
+    {
+      "op": "overlay",
+      "from_s": 3.7,
+      "props": [
+        {
+          "type": "sparkle",
+          "keyframes": [
+            {
+              "t": 0,
+              "x": 330,
+              "y": 70,
+              "show": 0,
+              "scale": 0.8,
+              "variant": "gold"
+            },
+            {
+              "t": 0.35,
+              "show": 1,
+              "ease": "back"
+            },
+            {
+              "t": 1.2,
+              "show": 1
+            },
+            {
+              "t": 1.5,
+              "show": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
