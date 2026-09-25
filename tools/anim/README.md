@@ -52,6 +52,7 @@ Nicht gesetzte Parameter übernehmen den Wert des vorigen Keyframes. `ease` gilt
 | `mouth_curve` | 12 | px, > 0 Lächeln, < 0 traurig, 0 gerade |
 | `mouth_width` | 94 | px |
 | `mouth_open` | 0 | > 1 = offener Mund (Höhe in px) |
+| `mouth_o` | 0 | > 1 = runder „O“-Mund (Radius in px, 12–16), ersetzt den normalen Mund. Liegt ein Gegenstand davor (Strohhalm), werden die Lippen darüber noch einmal gezeichnet, so steckt der Halm im Mund. Mitte: `rig.mouth_center(pose)` |
 | `blush` | 0 | 0–1 Wangen-Striche |
 | `tears` | 0 | 0–1 Tränen laufen aus beiden Augen (bewegen sich von selbst) |
 | `sweat` | 0 | 0–1 Schweißtropfen an der Kopfseite |
@@ -104,7 +105,7 @@ Klassische Formen: Klassische Cartoon-Handschuhe: **drei pummelige Finger und ei
 | `water_glass` | Wasserstand 0–1 (Oberfläche bleibt beim Kippen waagerecht) | – | 52 × 70 |
 | `bottle` | Füllstand 0–1 (Oberfläche waagerecht). Öffnung bei lokal (0, −64) | Etikettfarbe | 40 × 110 |
 | `water_stream` | 0–1 Strahl wächst nach unten, 1–2 Ende fällt ab. Immer senkrecht, auch angehängt | – | 100 lang |
-| `straw` | wie weit das Getränk im Halm hochgestiegen ist (0–1) | Streifenfarbe | Knick-Strohhalm, Fuß bei (0, 0), Spitze bei (−30, −86). Mit `attach_to` ins Glas hängen (`x: 8, y: 18`) und **vor** dem Glas in die Liste, dann liegt er im Glas |
+| `straw` | wie weit das Getränk im Halm hochgestiegen ist (0–1) | Streifenfarbe | Knick-Strohhalm, Fuß bei (0, 0), Spitze bei (−30, −86). Mit `attach_to` ins Glas hängen (`x: 8, y: 18`) und **vor** dem Glas in die Liste, dann liegt er im Glas. Spitze auf den Mund legen und `mouth_o` setzen |
 | `water_drop` | – | Farbe | 24 × 32 |
 | `fireworks` | 0–0,35 Rakete steigt, 0,35–1 Explosion und Verblassen | `gold`, `pink`, `blue`, `green`, `purple`, `mix` | Ø 150 |
 | `book` | offen: jede ganze Zahl = eine Seite umgeblättert | `open` (Standard), `closed` | 124 × 66 |

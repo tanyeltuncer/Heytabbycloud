@@ -250,15 +250,15 @@ def straw(cv: Canvas, xf: Xf, progress: float, t: float, variant: str) -> None:
     progress 0..1 = how far the drink has risen inside the straw (sipping)."""
     pts = [xf(p) for p in STRAW_PATH]
     stripe = NAMED_COLORS.get(variant, RED)
-    cv.polyline(pts, xf.r(9), WHITE)
+    cv.polyline(pts, xf.r(7), WHITE)
     # diagonal stripes: short segments every 12 px along the straw
     total = sum(math.dist(a, b) for a, b in zip(STRAW_PATH, STRAW_PATH[1:]))
     for i in range(int(total // 12)):
         seg = _along(STRAW_PATH, (i * 12 + 4) / total)[-1]
         seg2 = _along(STRAW_PATH, (i * 12 + 8) / total)[-1]
-        cv.capsule(xf(seg), xf(seg2), xf.r(3.2), stripe)
+        cv.capsule(xf(seg), xf(seg2), xf.r(2.5), stripe)
     if progress > 0.01:
-        cv.polyline([xf(p) for p in _along(STRAW_PATH, progress)], xf.r(4.2), BLUE)
+        cv.polyline([xf(p) for p in _along(STRAW_PATH, progress)], xf.r(3.2), BLUE)
 
 
 PROPS = {

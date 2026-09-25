@@ -17,53 +17,59 @@
       "ease": "out"
     },
     {
-      "t": 1.0,
+      "t": 0.85,
       "pose": {
         "face_y": -26,
         "look_y": 10,
-        "mouth_width": 26,
         "mouth_curve": 0,
-        "eye_scale": 1.0,
+        "mouth_width": 40,
+        "eye_scale": 1.0
+      },
+      "ease": "inOut"
+    },
+    {
+      "t": 1.0,
+      "pose": {
+        "mouth_o": 14.5,
         "eye_open": 0.55,
         "blush": 0.4
       },
-      "ease": "inOut"
+      "ease": "out"
     },
     {
       "t": 1.3,
       "pose": {
-        "mouth_width": 20
-      },
-      "ease": "inOut"
+        "mouth_o": 13
+      }
     },
     {
       "t": 1.6,
       "pose": {
-        "mouth_width": 26
+        "mouth_o": 14.5
       }
     },
     {
       "t": 1.9,
       "pose": {
-        "mouth_width": 20
+        "mouth_o": 13
       }
     },
     {
       "t": 2.2,
       "pose": {
-        "mouth_width": 26
+        "mouth_o": 14.5
       }
     },
     {
       "t": 2.5,
       "pose": {
-        "mouth_width": 20
+        "mouth_o": 13
       }
     },
     {
       "t": 2.8,
       "pose": {
-        "mouth_width": 26
+        "mouth_o": 14.5
       }
     },
     {
@@ -71,9 +77,16 @@
       "pose": {
         "eye_open": 1,
         "eye_scale": 1.15,
-        "mouth_width": 22
+        "mouth_o": 15.5
       },
       "ease": "out"
+    },
+    {
+      "t": 3.3,
+      "pose": {
+        "mouth_o": 0
+      },
+      "ease": "in"
     },
     {
       "t": 3.5,
@@ -147,7 +160,7 @@
       "keyframes": [
         {
           "t": 0.0,
-          "x": 287.5,
+          "x": 285.5,
           "y": 390,
           "scale": 1.25,
           "progress": 0.95,
@@ -155,7 +168,7 @@
         },
         {
           "t": 0.8,
-          "x": 257.5,
+          "x": 255.5,
           "y": 260.0,
           "ease": "back"
         },
@@ -170,12 +183,12 @@
         },
         {
           "t": 3.5,
-          "x": 257.5,
+          "x": 255.5,
           "y": 260.0
         },
         {
           "t": 4.3,
-          "x": 297.5,
+          "x": 295.5,
           "y": 395,
           "ease": "in"
         }

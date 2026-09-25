@@ -46,6 +46,7 @@ class Pose:
     mouth_curve: float = 12.0  # px, >0 smile, <0 frown, 0 straight line
     mouth_width: float = 94.0
     mouth_open: float = 0.0   # 0 = stroke only, >0 = open mouth height in px
+    mouth_o: float = 0.0      # > 1: round "o" mouth, radius in px (sipping, surprise, whistling)
     blush: float = 0.0        # 0..1 cheek intensity
     tears: float = 0.0        # 0..1 tears running from both eyes
     sweat: float = 0.0        # 0..1 sweat drop at the side of the head
@@ -285,9 +286,34 @@ def _face(cv: Canvas, draw: ImageDraw.ImageDraw, p: Pose, t: float, duration: fl
         cv.poly(drop_points(x, y, size), BLUE_LIGHT)
         cv.circle((x - 3 * k, y - 1 * k), size * 0.3, WHITE)
     m = lay["mouth"]
+    if p.mouth_o > 1:
+        _mouth_o(cv, mouth_center(p), p.mouth_o * k, k, lips_only=False)
+        return
     mp = Pose(**{**vars(p), "mouth_width": p.mouth_width * m["w"], "mouth_curve": p.mouth_curve * k,
                  "mouth_open": p.mouth_open * k})
     _mouth(cv, draw, m["x"], m["y"] + (8 * k if p.mouth_open > 1 else 0), mp)
+
+
+MOUTH_INSIDE = (110, 38, 38)
+
+
+def mouth_center(p: Pose) -> tuple[float, float]:
+    """Where the mouth is on screen (the centre of an "o" mouth), e.g. to aim a straw."""
+    m = face_layout(p)["mouth"]
+    return m["x"], m["y"]
+
+
+def _mouth_o(cv: Canvas, c: tuple[float, float], r: float, k: float, lips_only: bool) -> None:
+    rx, ry = r * 0.9, r * 1.1
+    lip = 5 * k
+    if not lips_only:
+        cv.ellipse(c, rx + lip / 2, ry + lip / 2, WHITE)
+        cv.ellipse(c, rx - lip / 2, ry - lip / 2, MOUTH_INSIDE)
+        return
+    # lips again on top of props (a straw): only the ring, so what is inside stays visible
+    pts = [(c[0] + rx * math.cos(2 * math.pi * i / 40), c[1] + ry * math.sin(2 * math.pi * i / 40)) for i in range(40)]
+    cv.polyline(pts, lip + 3.5 * k, BLACK, closed=True)  # dark gap separates the lips from a white straw
+    cv.polyline(pts, lip, WHITE, closed=True)
 
 
 # --- tracks (hands and props) ---------------------------------------------------
@@ -352,6 +378,10 @@ def render_frame(anim: Animation, t: float) -> Image.Image:
             _draw_track(cv, tr, xf, st, t, which)
         if layer == "back":
             _face(cv, draw, pose_at(anim.keyframes, t), t, anim.duration_s, anim.loop)
+    pose = pose_at(anim.keyframes, t)
+    if pose.mouth_o > 1 and placed:
+        # redraw the lips over the props, so a straw reads as going *into* the mouth
+        _mouth_o(cv, mouth_center(pose), pose.mouth_o * pose.face_scale, pose.face_scale, lips_only=True)
     return img.resize((W, H), Image.Resampling.LANCZOS)
 
 

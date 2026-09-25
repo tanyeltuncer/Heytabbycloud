@@ -74,6 +74,7 @@ Hintergrund und Stilguide: `docs/spec/animationen.md`. Parameter-Referenz: `tool
 | `mouth_curve` | 12 | −14…18 | Lächeln +, traurig −, neutral 0 |
 | `mouth_width` | 94 | 50…110 | schmal bei offenem Mund (60–70) |
 | `mouth_open` | 0 | 0 / 10…32 | offener Mund; > 1 zählt als offen |
+| `mouth_o` | 0 | 0 / 12…16 | runder „O“-Mund (Radius, saugen, staunen); > 1 ersetzt den normalen Mund |
 | `blush` | 0 | 0…1 | Wangen; für Freude, Verlegenheit, Liebe |
 | `tears` | 0 | 0…1 | Tränen (laufen von selbst); mit `eye_shape: "sad"` und `mouth_curve` < 0 |
 | `sweat` | 0 | 0…1 | Schweißtropfen: Stress, Verlegenheit, Anstrengung |
@@ -92,7 +93,7 @@ Vollständige Referenz: `tools/anim/README.md` → „Hände und Gegenstände“
 - **Gegenstände**: `water_glass`, `bottle`, `water_stream`, `water_drop`, `fireworks`, `book`, `checklist`, `coffee`, `heart`, `sparkle`, `star`, `trophy`, `clock`, `zzz` (Bedeutung von `progress` und `variant` in der README)
 - Keyframe-Felder flach: `t`, `ease`, `x`, `y`, `rot`, `scale`, `show`, `progress`, `shape`, `variant`, `arm`
 - **Umgreifen (bevorzugt für Glas, Flasche, Tasse):** `shape: "grip"`. Die Hand kommt **zuerst** in die Liste (mit `name`), der Gegenstand danach mit `attach_to` auf die Hand bei `x: 0, y: -34` (tiefer, z. B. `-54`, greift weiter unten; dann bleibt der Füllstand sichtbar). Das Rig legt die Handfläche automatisch hinter und die Finger vor den Gegenstand. Soll ein Gegenstand eine Hand bewegen (Flasche wird gekippt), bewegt man die **Hand** und hängt den Gegenstand daran (Beispiel `refill_water`).
-- **Ohne Hände (Stil der Original-Taby-Clips):** Gegenstände dürfen allein schweben, z. B. ein Glas mit `straw`, dessen Spitze am Mund liegt (`drink_straw`, **Standard fürs Trinken**), oder ein Glas, das sich allein an den Mund legt und kippt. Positionen aus `rig.face_layout(...)` berechnen, damit Glasrand bzw. Halmspitze genau am Mund sitzen. Oft die ruhigere Lösung als eine Hand.
+- **Ohne Hände (Stil der Original-Taby-Clips):** Gegenstände dürfen allein schweben, z. B. ein Glas mit `straw`, dessen Spitze am Mund liegt (`drink_straw`, **Standard fürs Trinken**), oder ein Glas, das sich allein an den Mund legt und kippt. Positionen aus `rig.face_layout(...)` berechnen, damit Glasrand bzw. Halmspitze genau am Mund sitzen. Beim Saugen `mouth_o` 13–15 setzen und die Halmspitze auf `rig.mouth_center(pose)` legen: Die Lippen werden dann über den Halm gezeichnet, er steckt im Mund. Oft die ruhigere Lösung als eine Hand.
 - **Finger weglassen, wo sie verdeckt wären:** von hinten gehalten → `grip_behind` (nur der Daumen vorne); Handkante zum Betrachter → `side`. Zeig nicht immer die ganze Hand, sondern das, was man aus diesem Blickwinkel sähe.
 - **Auflegen/Tragen ohne Umgreifen:** `hold`, Gegenstand vor der Hand in der Liste.
 - **Auftritt**: `show` 0 → 1 mit `ease: "back"`; vorher `show: 0` setzen. Abgang: aus dem Bild fahren (`y` > 300) oder `show` → 0.
@@ -126,7 +127,7 @@ Das Rig kann **nicht**: Text, Körper oder Arme, freie Formen außerhalb des Kat
 
 Gute Vorlagen in `animations/src/`:
 - nur Gesicht: `blink_idle_loop` (Loop, Blick, Blinzeln), `happy_bounce` (Antizipation, Sprung, Squash, Wangen), `sleepy_yawn` (langsames Timing), `sneeze`, `crying_loop` (Tränen, Zittern)
-- mit Teilen: `drink_straw` (Glas mit Strohhalm schwebt unter den Mund, Getränk steigt im Halm, Pegel sinkt), `refill_water` (Flasche gießt mit Strahl ins Glas, Gesicht rückt zur Seite und schaut zu), `fireworks_celebrate` (Hintergrund-Effekte, Sternenaugen, winkende Hände), `reading_loop` (Buch mit zwei Händen, Seite blättert), `checklist_done` (Liste links, Gesicht rechts und seitlich gedreht, Zeigefinger tippt jede Zeile, Daumen hoch), `in_love_loop` (Herzaugen, aufsteigende Herzen nahtlos im Loop)
+- mit Teilen: `drink_straw` (Glas mit Strohhalm schwebt unter den Mund, Getränk steigt im Halm, O-Mund umschließt die Spitze, Pegel sinkt), `refill_water` (Flasche gießt mit Strahl ins Glas, Gesicht rückt zur Seite und schaut zu), `fireworks_celebrate` (Hintergrund-Effekte, Sternenaugen, winkende Hände), `reading_loop` (Buch mit zwei Händen, Seite blättert), `checklist_done` (Liste links, Gesicht rechts und seitlich gedreht, Zeigefinger tippt jede Zeile, Daumen hoch), `in_love_loop` (Herzaugen, aufsteigende Herzen nahtlos im Loop)
 
 ## Grenzen und Lizenz
 
