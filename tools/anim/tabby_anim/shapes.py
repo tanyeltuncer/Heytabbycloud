@@ -118,9 +118,45 @@ def rounded_rect(x0: float, y0: float, x1: float, y1: float, r: float, n: int = 
     return pts
 
 
+def _hull(points: list[Point]) -> list[Point]:
+    """Convex hull (monotone chain)."""
+    pts = sorted(set(points))
+    if len(pts) <= 2:
+        return pts
+
+    def cross(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+    lower: list[Point] = []
+    for p in pts:
+        while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
+            lower.pop()
+        lower.append(p)
+    upper: list[Point] = []
+    for p in reversed(pts):
+        while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
+            upper.pop()
+        upper.append(p)
+    return lower[:-1] + upper[:-1]
+
+
+def _circle_samples(c: Point, r: float, n: int = 28) -> list[Point]:
+    return [(c[0] + r * math.cos(2 * math.pi * i / n), c[1] + r * math.sin(2 * math.pi * i / n)) for i in range(n)]
+
+
 def _prim(cv: Canvas, xf: Xf, prim: tuple, grow: float, fill) -> None:
     kind = prim[0]
-    if kind == "circle":
+    if kind == "hull":  # ("hull", [((x, y), r), ...]): smooth blob around several circles, e.g. tapered fingers
+        samples: list[Point] = []
+        for c, r in prim[1]:
+            samples += _circle_samples(xf(c), xf.r(r) + grow)
+        cv.poly(_hull(samples), fill)
+    elif kind == "ellipse":  # ("ellipse", (x, y), rx, ry)
+        _, c, rx, ry = prim
+        pts = [xf((c[0] + (rx + grow / max(xf.scale, 1e-6)) * math.cos(2 * math.pi * i / 36),
+                   c[1] + (ry + grow / max(xf.scale, 1e-6)) * math.sin(2 * math.pi * i / 36))) for i in range(36)]
+        cv.poly(pts, fill)
+    elif kind == "circle":
         cv.circle(xf(prim[1]), xf.r(prim[2]) + grow, fill)
     elif kind == "capsule":
         cv.capsule(xf(prim[1]), xf(prim[2]), xf.r(prim[3]) + grow, fill)

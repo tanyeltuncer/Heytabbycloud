@@ -152,7 +152,8 @@
           "x": 170,
           "y": 330,
           "rot": -50,
-          "shape": "point"
+          "shape": "point",
+          "scale": 0.85
         },
         {
           "t": 0.8,
@@ -210,12 +211,12 @@
         },
         {
           "t": 2.95,
-          "scale": 1.15,
+          "scale": 0.98,
           "ease": "out"
         },
         {
           "t": 3.2,
-          "scale": 1.0,
+          "scale": 0.85,
           "ease": "inOut"
         },
         {

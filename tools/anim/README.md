@@ -84,9 +84,11 @@ Zusätzlich zu `keyframes` (Gesicht) kann eine Animation Spuren für Hände und 
 | `side` | nur Hände: `right` (Standard) oder `left` (gespiegelt) |
 | `layer` | `front` (über dem Gesicht, Standard) oder `back` (dahinter, z. B. Feuerwerk) |
 
-Keyframe-Felder (flach, ohne `pose`): `t`, `ease`, `x`, `y` (Mittelpunkt, Bildschirm 456 × 280), `rot` (Grad, im Uhrzeigersinn), `scale`, `show` (0 = unsichtbar; mit `ease: "back"` von 0 auf 1 ploppt es auf), `progress` (je Gegenstand, siehe unten), `shape` (Hände), `variant` (Farbe oder Modus). Die Zeichenreihenfolge folgt der Liste: Spätere Spuren liegen oben.
+Keyframe-Felder (flach, ohne `pose`): `t`, `ease`, `x`, `y` (Mittelpunkt, Bildschirm 456 × 280), `rot` (Grad, im Uhrzeigersinn), `scale`, `arm` (nur Hände), `show` (0 = unsichtbar; mit `ease: "back"` von 0 auf 1 ploppt es auf), `progress` (je Gegenstand, siehe unten), `shape` (Hände), `variant` (Farbe oder Modus). Die Zeichenreihenfolge folgt der Liste: Spätere Spuren liegen oben.
 
-**Hände** (`shape`): `open`, `fist`, `point`, `thumbs_up`, `peace`, `hold` (zum Halten). Weiße Handschuh-Kontur wie im Original, etwa 70 px hoch bei `scale` 1.
+**Hände** (`shape`): `open`, `fist`, `point`, `thumbs_up`, `peace`, `hold` (zum Halten). Klassische Cartoon-Handschuhe: **drei pummelige Finger und ein Daumen**, runde Handfläche, kleine ausgestellte Stulpe mit Falten, etwa 90 px hoch bei `scale` 1 (in Szenen mit Gegenständen oft 0,85).
+- `variant`: `filled` (Standard, weißer Handschuh mit dünnen schwarzen Innenlinien) oder `outline` (weiße Kontur auf Schwarz wie die Handschuhe im Original)
+- `arm`: optionale Länge (px) eines Gummischlauch-Arms unter der Stulpe, z. B. wenn die Hand von unten ins Bild greift
 
 **Gegenstände:**
 

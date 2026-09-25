@@ -58,7 +58,7 @@ class Pose:
 
 
 POSE_FIELDS = {f.name for f in fields(Pose)}
-TRACK_NUMBERS = {"x": 228.0, "y": 140.0, "rot": 0.0, "scale": 1.0, "show": 1.0, "progress": 0.0}
+TRACK_NUMBERS = {"x": 228.0, "y": 140.0, "rot": 0.0, "scale": 1.0, "show": 1.0, "progress": 0.0, "arm": 0.0}
 TRACK_STRINGS = {"shape", "variant"}
 
 
@@ -309,7 +309,7 @@ def _draw_track(cv: Canvas, track: Track, xf: Xf, st: dict, t: float) -> None:
     if xf.scale <= 0.02:
         return
     if track.type == "hand":
-        draw_hand(cv, xf, st["shape"])
+        draw_hand(cv, xf, st["shape"], st["variant"], st["arm"])
     else:
         PROPS[track.type](cv, xf, st["progress"], t, st["variant"])
 

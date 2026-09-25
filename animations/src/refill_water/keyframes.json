@@ -197,7 +197,8 @@
           "x": 25,
           "y": 12,
           "rot": -90,
-          "shape": "hold"
+          "shape": "hold",
+          "scale": 0.85
         }
       ]
     }
