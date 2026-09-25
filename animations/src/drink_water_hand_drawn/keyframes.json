@@ -17,39 +17,63 @@
       "ease": "inOut"
     },
     {
-      "t": 1.25,
+      "t": 1.2,
       "pose": {
-        "look_x": -2,
-        "look_y": -4,
-        "eye_open": 0.0,
-        "bounce": -4
+        "look_x": -6,
+        "look_y": 8,
+        "mouth_width": 52,
+        "mouth_curve": 5,
+        "face_y": -4,
+        "turn": -0.12
       },
       "ease": "inOut"
     },
     {
-      "t": 2.7,
+      "t": 2.05,
       "pose": {
-        "eye_open": 0.0,
-        "bounce": -6
+        "eye_open": 1
       },
-      "ease": "linear"
+      "ease": "hold"
     },
     {
-      "t": 3.0,
+      "t": 2.15,
       "pose": {
-        "eye_shape": "happy",
-        "look_x": 0,
-        "look_y": 0,
-        "bounce": 4,
-        "squash": 1.1,
-        "mouth_open": 14,
-        "mouth_width": 60,
-        "blush": 0.7
+        "eye_open": 0.08
+      },
+      "ease": "in"
+    },
+    {
+      "t": 2.28,
+      "pose": {
+        "eye_open": 1
       },
       "ease": "out"
     },
     {
-      "t": 3.3,
+      "t": 2.75,
+      "pose": {
+        "face_y": -6
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 3.05,
+      "pose": {
+        "eye_shape": "happy",
+        "look_x": 0,
+        "look_y": 0,
+        "face_y": 0,
+        "turn": 0,
+        "bounce": 4,
+        "squash": 1.08,
+        "mouth_open": 14,
+        "mouth_width": 60,
+        "blush": 0.8
+      },
+      "ease": "out"
+    },
+    {
+      "t": 3.35,
       "pose": {
         "bounce": 0,
         "squash": 1.0
@@ -57,22 +81,20 @@
       "ease": "back"
     },
     {
-      "t": 3.7,
+      "t": 3.8,
       "pose": {
         "eye_shape": "pill",
-        "eye_open": 1,
         "mouth_open": 0,
         "mouth_width": 94,
         "mouth_curve": 14
       },
-      "ease": "inOut"
+      "ease": "hold"
     },
     {
       "t": 4.2,
       "pose": {
-        "blush": 0.2
-      },
-      "ease": "inOut"
+        "blush": 0.3
+      }
     }
   ],
   "props": [
@@ -83,16 +105,21 @@
         {
           "t": 0.0,
           "x": -2,
-          "y": -30,
-          "scale": 1.5,
+          "y": -36,
+          "scale": 1.2,
           "progress": 1.0
         },
         {
-          "t": 1.3,
-          "progress": 0.97
+          "t": 1.2,
+          "progress": 1.0
         },
         {
-          "t": 2.7,
+          "t": 2.0,
+          "progress": 0.55,
+          "ease": "linear"
+        },
+        {
+          "t": 2.75,
           "progress": 0.0,
           "ease": "in"
         }
@@ -105,53 +132,52 @@
       "keyframes": [
         {
           "t": 0.0,
-          "x": 400,
+          "x": 410,
           "y": 340,
-          "rot": -5,
+          "rot": -8,
           "shape": "fist",
-          "scale": 1.0,
           "variant": "sprite"
         },
         {
           "t": 0.6,
-          "x": 330,
-          "y": 250,
-          "rot": -6,
+          "x": 335,
+          "y": 238,
+          "rot": -18,
           "ease": "out"
         },
         {
-          "t": 1.25,
-          "x": 238,
-          "y": 246,
-          "rot": -22,
+          "t": 1.2,
+          "x": 294.2,
+          "y": 226.8,
+          "rot": -68,
           "ease": "inOut"
         },
         {
           "t": 2.0,
-          "x": 232,
-          "y": 240,
-          "rot": -45,
-          "ease": "inOut"
+          "x": 299.2,
+          "y": 197.0,
+          "rot": -90,
+          "ease": "linear"
         },
         {
-          "t": 2.7,
-          "x": 226,
-          "y": 236,
-          "rot": -72,
+          "t": 2.75,
+          "x": 295.6,
+          "y": 175.2,
+          "rot": -106,
           "ease": "in"
         },
         {
-          "t": 3.2,
+          "t": 3.3,
           "x": 335,
-          "y": 252,
-          "rot": -8,
+          "y": 240,
+          "rot": -14,
           "ease": "inOut"
         },
         {
           "t": 4.2,
-          "x": 400,
+          "x": 410,
           "y": 345,
-          "rot": -5,
+          "rot": -6,
           "ease": "in"
         }
       ]

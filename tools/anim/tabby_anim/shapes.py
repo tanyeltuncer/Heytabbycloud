@@ -68,6 +68,21 @@ class Canvas:
         self.d = draw
         self.img = draw._image  # the supersampled target image, for pasting sprites
 
+    def tint(self, pts: list, color, alpha: float) -> None:
+        """Semi-transparent polygon (glass): blends `color` over what is already drawn."""
+        from PIL import Image, ImageDraw
+        if len(pts) < 3 or alpha <= 0:
+            return
+        xs, ys = [p[0] * SS for p in pts], [p[1] * SS for p in pts]
+        x0, y0 = max(0, int(min(xs)) - 2), max(0, int(min(ys)) - 2)
+        x1, y1 = min(self.img.width, int(max(xs)) + 3), min(self.img.height, int(max(ys)) + 3)
+        if x1 <= x0 or y1 <= y0:
+            return
+        mask = Image.new("L", (x1 - x0, y1 - y0), 0)
+        ImageDraw.Draw(mask).polygon([(x - x0, y - y0) for x, y in zip(xs, ys)], fill=round(255 * min(1.0, alpha)))
+        region = self.img.crop((x0, y0, x1, y1))
+        self.img.paste(Image.composite(Image.new("RGB", region.size, color), region, mask), (x0, y0))
+
     def sprite(self, img, xf: "Xf", height: float) -> None:
         """Paste an RGBA sprite centred on the transform origin, `height` logical px tall at xf.scale 1."""
         from PIL import Image

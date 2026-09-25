@@ -22,9 +22,14 @@ def _ease_out(x: float) -> float:
 
 
 def water_glass(cv: Canvas, xf: Xf, progress: float, t: float, variant: str) -> None:
-    """progress = water level 0 (empty) .. 1 (full). The surface stays level when tilted."""
+    """progress = water level 0 (empty) .. 1 (full). The surface stays level when tilted.
+    Clear glass by default (face shows through); variant "opaque" for a black interior."""
     top, bottom, wt, wb = -36, 34, 26, 20
-    cv.poly([xf(p) for p in [(-wt, top), (wt, top), (wb, bottom), (-wb, bottom)]], BLACK)
+    body = [xf(p) for p in [(-wt, top), (wt, top), (wb, bottom), (-wb, bottom)]]
+    if variant == "opaque":  # the old look: black inside
+        cv.poly(body, BLACK)
+    else:  # clear glass (default): what is behind shows through, faintly tinted
+        cv.tint(body, BLUE_LIGHT, 0.22)
     interior = [xf(p) for p in [(-wt + 3, top + 2), (wt - 3, top + 2), (wb - 3, bottom - 3), (-wb + 3, bottom - 3)]]
     draw_liquid(cv, interior, progress, BLUE, BLUE_LIGHT)
     if progress > 0.15:  # glint on the glass wall
