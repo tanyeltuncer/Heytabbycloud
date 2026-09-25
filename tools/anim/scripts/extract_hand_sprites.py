@@ -17,8 +17,8 @@ from PIL import Image, ImageFilter
 
 UP = 4  # upscale factor before segmentation
 BOXES = {  # shape name -> box in the 740 x 493 sheet
-    "open": (62, 78, 182, 192), "peace": (185, 135, 272, 236), "rock": (285, 88, 372, 206),
-    "thumbs_up": (385, 58, 485, 172), "fist": (500, 100, 582, 196), "point": (595, 88, 675, 206),
+    "open": (62, 78, 182, 202), "peace": (185, 135, 274, 248), "rock": (285, 88, 374, 216),
+    "thumbs_up": (376, 58, 487, 180), "fist": (498, 100, 584, 206), "point": (593, 88, 677, 216),
 }
 
 src = Image.open(sys.argv[1]).convert("RGB")
@@ -69,6 +69,15 @@ for name, (x0, y0, x1, y1) in BOXES.items():
             arm = (r - b) >= 13 and (r + g + b) < 330
             km[x, y] = 255 if (not bm[x, y] and ng[x, y] and not arm) else 0
     # opening removes JPEG specks around the ink line, one more erosion trims the ragged rim
+    # light anti-aliasing pixels between the black contour and the background form a pale
+    # halo on a black display: drop everything light that lies right next to the background
+    rim = bgmask.filter(ImageFilter.MaxFilter(2 * UP + 1)).load()
+    for y in range(h):
+        for x in range(w):
+            if km[x, y] and rim[x, y]:
+                r, g, b = px[x, y]
+                if 0.299 * r + 0.587 * g + 0.114 * b > 95:
+                    km[x, y] = 0
     k = 2 * UP - 1
     keepmask = keepmask.filter(ImageFilter.MinFilter(k)).filter(ImageFilter.MaxFilter(k)).filter(ImageFilter.MinFilter(UP + 1 | 1))
     km = keepmask.load()
@@ -84,6 +93,11 @@ for name, (x0, y0, x1, y1) in BOXES.items():
                 dst[x, y] = (v, v, v, 255)
             else:
                 dst[x, y] = (0, 0, 0, 0)
+    # JPEG block edges leave thin straight nicks across the ink lines: a median filter removes
+    # such thin strokes without changing line weight
+    r_, _, _, a_ = rgba.split()
+    ink = r_.filter(ImageFilter.MedianFilter(2 * UP + 1))
+    rgba = Image.merge("RGBA", (ink, ink, ink, a_))
     rgba = rgba.crop(rgba.getbbox())
     rgba.save(out / f"{name}.png")
     meta[name] = {"size": rgba.size}

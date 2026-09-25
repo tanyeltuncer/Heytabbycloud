@@ -1,0 +1,35 @@
+{
+  "duration_s": 3.8,
+  "loop": false,
+  "keyframes": [
+    { "t": 0.0, "pose": { "mouth_curve": 12 } },
+    { "t": 0.35, "pose": { "eye_shape": "happy", "mouth_open": 14, "mouth_width": 60, "bounce": -8, "squash": 0.95, "turn": 0.15, "face_x": -20 }, "ease": "out" },
+    { "t": 0.65, "pose": { "bounce": 0, "squash": 1.0 }, "ease": "back" },
+    { "t": 1.9, "pose": { "eye_shape": "pill", "mouth_open": 0, "mouth_width": 94, "mouth_curve": 16 }, "ease": "hold" },
+    { "t": 2.1, "pose": { "eye_open": 0.1 }, "ease": "in" },
+    { "t": 2.25, "pose": { "eye_open": 1, "eye_shape": "happy", "blush": 1, "turn": 0, "face_x": 0, "bounce": -6 }, "ease": "out" },
+    { "t": 2.5, "pose": { "bounce": 0 }, "ease": "back" },
+    { "t": 3.3, "pose": { "eye_shape": "pill" }, "ease": "hold" },
+    { "t": 3.8, "pose": { "mouth_curve": 14, "blush": 0.3 } }
+  ],
+  "props": [
+    { "type": "hand", "side": "right", "keyframes": [
+        { "t": 0.0, "x": 395, "y": 340, "rot": 10, "shape": "open", "variant": "sprite" },
+        { "t": 0.35, "y": 205, "ease": "back" },
+        { "t": 0.6, "rot": 24 }, { "t": 0.9, "rot": -8 }, { "t": 1.2, "rot": 24 }, { "t": 1.5, "rot": -8 },
+        { "t": 1.85, "rot": 8 },
+        { "t": 2.0, "shape": "thumbs_up", "rot": 4, "ease": "hold" },
+        { "t": 2.2, "scale": 1.12, "ease": "out" }, { "t": 2.45, "scale": 1.0, "ease": "inOut" },
+        { "t": 3.3, "y": 205 },
+        { "t": 3.8, "y": 345, "ease": "in" }
+      ] },
+    { "type": "hand", "side": "left", "keyframes": [
+        { "t": 0.0, "x": 62, "y": 212, "rot": -12, "shape": "peace", "variant": "sprite", "show": 0 },
+        { "t": 2.05, "show": 0 },
+        { "t": 2.35, "show": 1, "ease": "back" },
+        { "t": 2.7, "rot": -4 }, { "t": 3.0, "rot": -14 },
+        { "t": 3.3, "y": 212 },
+        { "t": 3.8, "y": 345, "ease": "in" }
+      ] }
+  ]
+}

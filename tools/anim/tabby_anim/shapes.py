@@ -74,11 +74,13 @@ class Canvas:
         k = height * xf.scale * SS / img.height
         if k <= 0:
             return
-        s = img.resize((max(1, round(img.width * k)), max(1, round(img.height * k))), Image.Resampling.LANCZOS)
+        # resample in premultiplied alpha, otherwise transparent pixels bleed into the edges as fringes
+        s = img.convert("RGBa").resize((max(1, round(img.width * k)), max(1, round(img.height * k))), Image.Resampling.BICUBIC)
         if xf.mirror:
             s = s.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
         if xf.rot:
             s = s.rotate(-xf.rot, resample=Image.Resampling.BICUBIC, expand=True)
+        s = s.convert("RGBA")
         self.img.paste(s, (round(xf.x * SS - s.width / 2), round(xf.y * SS - s.height / 2)), s)
 
     @staticmethod
