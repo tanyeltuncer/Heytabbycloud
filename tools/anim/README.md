@@ -8,10 +8,13 @@ pip install -r requirements.txt          # Pillow; gifsicle optional (apt instal
 cd tools/anim
 python -m tabby_anim build ../../animations/src --out ../../dist/animations
 python -m tabby_anim extract some.gif --out frames/   # GIF → quer liegende PNG-Frames
+python -m tabby_anim preview ../../animations/src/<id> --out sheet.png   # Kontaktbogen mit Zeitstempeln
 python -m unittest discover -s tests -v
 ```
 
 Lokal ist das optional: Der Workflow `.github/workflows/animations.yml` baut bei jedem Push alles und hängt GIFs, Vorschauen und `report.json` als Artefakt an.
+
+**Mit Claude Code:** `/tabby-animation <Beschreibung>`. Der Skill (`.claude/skills/tabby-animation/`) schreibt die Keyframes, baut, prüft den Kontaktbogen und bessert nach.
 
 ## Quellen: `animations/src/<id>/`
 

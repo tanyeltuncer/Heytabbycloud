@@ -97,7 +97,8 @@ def _eye(draw: ImageDraw.ImageDraw, cx: float, cy_bottom: float, p: Pose) -> Non
         box = [cx - w / 2, cy_bottom - h * 0.55, cx + w / 2, cy_bottom + h * 0.25]
         draw.arc([v * SS for v in box], start=200, end=340, fill=WHITE, width=int(th * SS))
         return
-    eh = max(10.0, h * p.eye_open)
+    # clamp: "back" easing may overshoot past fully open, eyes must not stretch
+    eh = max(10.0, h * min(1.05, max(0.0, p.eye_open)))
     r = min(w, eh) * 0.42  # rounded rectangle, not a full pill (upstream look)
     box = [cx - w / 2, cy_bottom - eh, cx + w / 2, cy_bottom]
     draw.rounded_rectangle([v * SS for v in box], radius=r * SS, fill=WHITE)

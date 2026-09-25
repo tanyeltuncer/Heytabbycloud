@@ -1,0 +1,16 @@
+{
+  "duration_s": 2.4,
+  "loop": false,
+  "keyframes": [
+    { "t": 0.0,  "pose": { "eye_open": 1, "mouth_curve": 12 } },
+    { "t": 0.35, "pose": { "eye_open": 0.6, "bounce": -6, "look_y": -4, "squash": 0.94, "mouth_open": 12, "mouth_width": 60 }, "ease": "out" },
+    { "t": 0.5,  "pose": { "eye_open": 0.7, "bounce": -3, "mouth_open": 8 }, "ease": "inOut" },
+    { "t": 0.8,  "pose": { "eye_open": 0.35, "bounce": -12, "look_y": -8, "squash": 0.88, "mouth_open": 22, "mouth_width": 56 }, "ease": "out" },
+    { "t": 1.05, "pose": { "eye_open": 0.3, "bounce": -14 }, "ease": "hold" },
+    { "t": 1.15, "pose": { "eye_open": 0.0, "bounce": 14, "look_y": 8, "squash": 1.24, "mouth_open": 0, "mouth_width": 70, "mouth_curve": -6 }, "ease": "in" },
+    { "t": 1.4,  "pose": { "eye_open": 0.1, "bounce": 10, "squash": 1.15 }, "ease": "linear" },
+    { "t": 1.65, "pose": { "eye_open": 1, "eye_scale": 1.08, "bounce": -3, "look_y": 0, "squash": 0.97, "mouth_curve": 0, "mouth_width": 80 }, "ease": "out" },
+    { "t": 1.95, "pose": { "eye_scale": 1.08 }, "ease": "hold" },
+    { "t": 2.4,  "pose": { "eye_scale": 1, "bounce": 0, "squash": 1, "mouth_curve": 12, "mouth_width": 94 }, "ease": "inOut" }
+  ]
+}

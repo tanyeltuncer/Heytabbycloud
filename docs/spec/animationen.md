@@ -118,6 +118,8 @@ Getestet und bewertet (Stand September 2026):
 
 **Grenzen des Rigs (Ausbauideen):** Hände/Handschuhe, Requisiten, Spezialaugen (`>` `<`, Herzen, Tränen) und schräge Blinzel-Striche wie im Original fehlen noch. Jede neue Form ist eine kleine Zeichenfunktion im Rig und danach für die KI nur ein weiterer Parameter.
 
+**In Claude Code (umgesetzt):** Skill `/tabby-animation <Beschreibung>` (`.claude/skills/tabby-animation/SKILL.md`). Getestet mit „Tabby niest“ → `animations/src/sneeze` (47 Frames, 7 Farben, 45 KB), nach zwei Korrekturrunden anhand des Kontaktbogens.
+
 **In der Web-App (F-23):** Beschreibung eintippen → Claude erzeugt `keyframes.json` (Structured Output gegen das Schema des Rigs) → Backend rendert eine Vorschau → im Simulator ansehen → „Übernehmen“ legt einen Pull Request an, und die CI baut das Asset-Pack.
 
 ## 5. Speicher-Budget ⚠️

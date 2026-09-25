@@ -16,7 +16,7 @@ import re
 import sys
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from . import gif, rig
 
@@ -102,6 +102,42 @@ def cmd_extract(args: argparse.Namespace) -> int:
     return 0
 
 
+def contact_sheet(frames: list[Image.Image], times_ms: list[int], columns: int = 4, count: int = 12) -> Image.Image:
+    """Evenly spaced frames with timestamps, for reviewing timing and poses at a glance."""
+    count = min(count, len(frames))
+    idx = [round(i * (len(frames) - 1) / max(1, count - 1)) for i in range(count)]
+    w, h = 228, 140
+    rows = (count + columns - 1) // columns
+    sheet = Image.new("RGB", (columns * w, rows * (h + 16)), (45, 45, 45))
+    draw = ImageDraw.Draw(sheet)
+    for k, i in enumerate(idx):
+        x, y = (k % columns) * w, (k // columns) * (h + 16)
+        draw.text((x + 4, y + 2), f"{times_ms[i] / 1000:.2f} s", fill=(230, 230, 230))
+        sheet.paste(frames[i].resize((w - 4, h - 4)), (x + 2, y + 16))
+    return sheet
+
+
+def cmd_preview(args: argparse.Namespace) -> int:
+    src = Path(args.src)
+    if src.suffix == ".gif":
+        stored = Image.open(src)
+        frames, times, t = [], [], 0
+        for i in range(stored.n_frames):
+            stored.seek(i)
+            frames.append(stored.convert("RGB").transpose(Image.Transpose.ROTATE_90))
+            times.append(t)
+            t += stored.info.get("duration", 40)
+    else:
+        meta = load_meta(src)
+        frames, _ = load_frames(src, meta)
+        times = [round(i * 1000 / gif.FPS) for i in range(len(frames))]
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    contact_sheet(frames, times, count=args.count).save(out)
+    print(f"preview written to {out} ({len(frames)} frames)")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="tabby_anim")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -113,5 +149,10 @@ def main(argv: list[str] | None = None) -> int:
     e.add_argument("gif")
     e.add_argument("--out", required=True)
     e.set_defaults(func=cmd_extract)
+    pv = sub.add_parser("preview", help="contact sheet with timestamps (source folder or GIF)")
+    pv.add_argument("src")
+    pv.add_argument("--out", required=True)
+    pv.add_argument("--count", type=int, default=12)
+    pv.set_defaults(func=cmd_preview)
     args = parser.parse_args(argv)
     return args.func(args)
