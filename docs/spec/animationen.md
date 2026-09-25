@@ -124,7 +124,7 @@ Getestet und bewertet (Stand September 2026):
 
 Gegenstände lassen sich an Hände hängen (`attach_to`). Übersicht: `python -m tabby_anim catalog`. Referenz: [tools/anim/README.md](../../tools/anim/README.md).
 
-Beispiele mit Teilen: `refill_water`, `drink_water_sip`, `fireworks_celebrate`, `reading_loop`, `checklist_done`, `in_love_loop`, `crying_loop`. Die automatischen Tests prüfen jedes Teil, die Spiegelung links/rechts, ungültige Angaben und die Loop-Nahtstellen.
+Beispiele mit Teilen: `drink_straw` (Standard fürs Trinken), `refill_water`, `fireworks_celebrate`, `reading_loop`, `checklist_done`, `in_love_loop`, `crying_loop`. Die automatischen Tests prüfen jedes Teil, die Spiegelung links/rechts, ungültige Angaben und die Loop-Nahtstellen.
 
 **Noch offen:** schräge Blinzel-Striche wie im Original, Text, Körper. Jede neue Form ist eine kleine Zeichenfunktion und danach für die KI nur ein weiterer Parameter.
 

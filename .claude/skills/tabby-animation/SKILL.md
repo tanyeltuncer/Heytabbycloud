@@ -92,7 +92,7 @@ Vollständige Referenz: `tools/anim/README.md` → „Hände und Gegenstände“
 - **Gegenstände**: `water_glass`, `bottle`, `water_stream`, `water_drop`, `fireworks`, `book`, `checklist`, `coffee`, `heart`, `sparkle`, `star`, `trophy`, `clock`, `zzz` (Bedeutung von `progress` und `variant` in der README)
 - Keyframe-Felder flach: `t`, `ease`, `x`, `y`, `rot`, `scale`, `show`, `progress`, `shape`, `variant`, `arm`
 - **Umgreifen (bevorzugt für Glas, Flasche, Tasse):** `shape: "grip"`. Die Hand kommt **zuerst** in die Liste (mit `name`), der Gegenstand danach mit `attach_to` auf die Hand bei `x: 0, y: -34` (tiefer, z. B. `-54`, greift weiter unten; dann bleibt der Füllstand sichtbar). Das Rig legt die Handfläche automatisch hinter und die Finger vor den Gegenstand. Soll ein Gegenstand eine Hand bewegen (Flasche wird gekippt), bewegt man die **Hand** und hängt den Gegenstand daran (Beispiel `refill_water`).
-- **Ohne Hände (Stil der Original-Taby-Clips):** Gegenstände dürfen allein schweben, z. B. ein Glas, das sich an den Mund legt (`drink_float`), oder ein Glas mit `straw`, dessen Spitze am Mund liegt (`drink_straw`). Positionen aus `rig.face_layout(...)` berechnen, damit Glasrand bzw. Halmspitze genau am Mund sitzen. Oft die ruhigere Lösung als eine Hand.
+- **Ohne Hände (Stil der Original-Taby-Clips):** Gegenstände dürfen allein schweben, z. B. ein Glas mit `straw`, dessen Spitze am Mund liegt (`drink_straw`, **Standard fürs Trinken**), oder ein Glas, das sich allein an den Mund legt und kippt. Positionen aus `rig.face_layout(...)` berechnen, damit Glasrand bzw. Halmspitze genau am Mund sitzen. Oft die ruhigere Lösung als eine Hand.
 - **Finger weglassen, wo sie verdeckt wären:** von hinten gehalten → `grip_behind` (nur der Daumen vorne); Handkante zum Betrachter → `side`. Zeig nicht immer die ganze Hand, sondern das, was man aus diesem Blickwinkel sähe.
 - **Auflegen/Tragen ohne Umgreifen:** `hold`, Gegenstand vor der Hand in der Liste.
 - **Auftritt**: `show` 0 → 1 mit `ease: "back"`; vorher `show: 0` setzen. Abgang: aus dem Bild fahren (`y` > 300) oder `show` → 0.
@@ -126,7 +126,7 @@ Das Rig kann **nicht**: Text, Körper oder Arme, freie Formen außerhalb des Kat
 
 Gute Vorlagen in `animations/src/`:
 - nur Gesicht: `blink_idle_loop` (Loop, Blick, Blinzeln), `happy_bounce` (Antizipation, Sprung, Squash, Wangen), `sleepy_yawn` (langsames Timing), `sneeze`, `crying_loop` (Tränen, Zittern)
-- mit Teilen: `drink_water_sip` (Hand hält Glas per `attach_to`, wird von voll bis leer getrunken), `refill_water` (Flasche gießt mit Strahl ins Glas, Gesicht rückt zur Seite und schaut zu), `fireworks_celebrate` (Hintergrund-Effekte, Sternenaugen, winkende Hände), `reading_loop` (Buch mit zwei Händen, Seite blättert), `checklist_done` (Liste links, Gesicht rechts und seitlich gedreht, Zeigefinger tippt jede Zeile, Daumen hoch), `in_love_loop` (Herzaugen, aufsteigende Herzen nahtlos im Loop)
+- mit Teilen: `drink_straw` (Glas mit Strohhalm schwebt unter den Mund, Getränk steigt im Halm, Pegel sinkt), `refill_water` (Flasche gießt mit Strahl ins Glas, Gesicht rückt zur Seite und schaut zu), `fireworks_celebrate` (Hintergrund-Effekte, Sternenaugen, winkende Hände), `reading_loop` (Buch mit zwei Händen, Seite blättert), `checklist_done` (Liste links, Gesicht rechts und seitlich gedreht, Zeigefinger tippt jede Zeile, Daumen hoch), `in_love_loop` (Herzaugen, aufsteigende Herzen nahtlos im Loop)
 
 ## Grenzen und Lizenz
 
