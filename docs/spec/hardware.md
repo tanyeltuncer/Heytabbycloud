@@ -22,6 +22,7 @@
 ### ⚠️ Revision V1 vs. V2
 Die Firmware unterstützt **nur V1**. V2 hat eine andere Pinbelegung und ist upstream ungetestet.
 - Beim Kauf auf „V1“ achten oder beim Händler nachfragen.
+- **Erkennen lässt sich die Revision nur an der Platinen-Beschriftung bzw. der Verdrahtung**, nicht per USB. Das zeigt der [bebilderte Revisions-Guide von Waveshare](https://docs.waveshare.com/ESP32-S3-Touch-AMOLED-1.64).
 - Falls V2 geliefert wird: **nicht flashen**. Zurückschicken oder erst nach einem Upstream-Support-Update verwenden.
 
 ## 2. Einkaufsliste
@@ -40,10 +41,16 @@ Die Firmware unterstützt **nur V1**. V2 hat eine andere Pinbelegung und ist ups
 
 ## 3. Gehäuse
 
-Upstream liefert für die 1.64 V1 ein Desktop-Gehäuse aus drei Teilen: **Base, Back, Handle** (`hardware/amoled-1.64/V1/desktop-case/`).
-Upstream stellt fertigen G-Code für die **Bambu P1S mit 0,4-mm-Düse** bereit. Für andere Drucker die Modelldateien aus dem Upstream-Katalog nehmen (`hardware/catalog.json`) oder einen Druckdienst beauftragen.
+Upstream liefert für die 1.64 V1 ein Desktop-Gehäuse aus drei Teilen: **Base, Back, Handle**.
+**[Print-Pack herunterladen](https://github.com/TRIIIS-LABS/firmware-taby/releases/download/prints-1.64-1.0.0/taby-1.64-print-pack-1.0.0.zip)** (STL, 3MF, G-Code).
 
-Druck-Empfehlung: PETG (hitzebeständiger am Monitor), 0,2 mm Schichthöhe, 15–20 % Infill.
+| Datei | Profil laut Upstream |
+|---|---|
+| G-Code | Bambu Lab P1S, 0,4-mm-Düse, PLA, 15 % Infill, variable Schichthöhe, Tree-Supports |
+| 3MF | Bambu Lab A1 mini, 0,4-mm-Düse, PLA, 25 % Infill, 0,2 mm, manuelle Tree-Supports, inkl. Modifier |
+| STL | für andere Drucker selbst slicen. **Achtung:** STL enthält keine Modifier und keine Support-Einstellungen. |
+
+Upstream druckt in PLA. PETG ist hitzebeständiger, falls Tabby direkt auf einem warmen Monitor sitzt. Maße dann gegebenenfalls nachprüfen. Die Passform für V2 ist upstream nicht bestätigt.
 
 **Montage**
 1. Magnet in die Aussparung von Base/Back kleben, Polung zum Stahlplättchen beachten
@@ -61,7 +68,8 @@ Druck-Empfehlung: PETG (hitzebeständiger am Monitor), 0,2 mm Schichthöhe, 15�
 
 ## 5. Hardware-Abnahme (Phase 0)
 
-- [ ] Die Aufschrift bzw. Verpackung bestätigt V1.
+- [ ] Die Platinen-Beschriftung bestätigt V1 (Waveshare-Guide, Foto in `docs/hardware-log.md`).
+- [ ] Download-Modus bekannt, falls das Flashen hängt: **BOOT halten, RESET drücken und loslassen, dann BOOT loslassen**.
 - [ ] USB-Port erscheint im Browser (WebSerial-Dialog).
 - [ ] Upstream-Release 1.1.x im Browser geflasht (siehe `webapp.md`, Setup-Wizard, oder upstream `INSTALL.md`)
 - [ ] `INFO` → `hardware_target: amoled-1.64`
