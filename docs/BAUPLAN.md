@@ -201,6 +201,7 @@ Die technischen Details stehen in [spec/](spec/), Entscheidungen in [adr/](adr/)
 | F-16 Sprache | Push-to-Talk im Browser, Transkription, Übergabe an den Chat |
 | F-19 Statistiken | Fokuszeit pro Tag/Woche, erledigte Aufgaben |
 | F-18 OTA | App-Größe messen → neues Partitionslayout (ADR-0004) → signierte Updates, Rollback-Test |
+| F-22 Eigene Animationen | Pipeline `tools/anim/` (Pillow, ffmpeg, gifsicle) im CI, ungenutzte Originale entfernen (Speicher!), erste eigene Animation in Figma + Jitter, siehe [spec/animationen.md](spec/animationen.md) |
 | IMU-Spielerei | QMI8658 auslesen: Tabby umdrehen = Timer pausieren (Firmware-Erweiterung) |
 
 ---

@@ -9,3 +9,4 @@
 | [webapp.md](webapp.md) | Seiten, Screens, Einrichtungs-Assistent, Simulator, PWA |
 | [infra.md](infra.md) | Docker Compose, Caddy, Mosquitto, Env-Variablen, CI/CD, Backups, Kosten |
 | [ki.md](ki.md) | Modell, Tools, Prompt, Caching, Guardrails, Test-Suite |
+| [animationen.md](animationen.md) | Analyse der Original-Animationen, Stilguide, Werkzeuge, Export-Pipeline, Speicher-Budget |

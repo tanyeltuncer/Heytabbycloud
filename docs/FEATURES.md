@@ -34,6 +34,7 @@ Technische Details: [spec/](spec/).
 | F-19 | Statistiken | 🟨 | 5 |
 | F-20 | Datenexport & Konto löschen | 🟧 | 3 |
 | F-21 | PWA & Browser-Benachrichtigungen | 🟧 | 3 |
+| F-22 | Eigene Animationen (Pipeline) | 🟨 | 5 |
 
 ---
 
@@ -251,6 +252,18 @@ Wir nutzen die **Auswahlkarten der Upstream-Firmware** (`UI/choice_2`). Getippte
 ## F-21 PWA & Benachrichtigungen 🟧
 - Die Web-App ist installierbar (Manifest und Service Worker), ohne App Store.
 - Web-Push für Timer-Ende und Erinnerungen, der Nutzer muss aktiv zustimmen.
+
+---
+
+## F-22 Eigene Animationen 🟨
+**Story:** Als Nutzer will ich eigene Animationen im Tabby-Stil erstellen und auf mein Gerät bringen.
+- Quelle: PNG-Sequenz oder MP4 (quer 456 × 280, 24 fps, schwarzer Hintergrund) plus `meta.yml`
+- Die CI-Pipeline erzeugt ein GIF im Upstream-Format (gedreht, Palette, Delta-optimiert), Metadaten und eine Vorschau (Details: [spec/animationen.md](spec/animationen.md)).
+
+**AK**
+- [ ] Ein neuer Clip landet per Pull Request ohne Handarbeit im Asset-Pack und in der Galerie.
+- [ ] Budget- oder Formatverstöße lassen den Build fehlschlagen, statt ein kaputtes Image zu erzeugen.
+- [ ] Der Clip läuft am Gerät in richtiger Ausrichtung und im Stil der Originale (Checkliste §7).
 
 ---
 
