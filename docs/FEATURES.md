@@ -34,7 +34,8 @@ Technische Details: [spec/](spec/).
 | F-19 | Statistiken | 🟨 | 5 |
 | F-20 | Datenexport & Konto löschen | 🟧 | 3 |
 | F-21 | PWA & Browser-Benachrichtigungen | 🟧 | 3 |
-| F-22 | Eigene Animationen (Pipeline) | 🟨 | 5 |
+| F-22 | Eigene Animationen (Pipeline) | 🟨 | 5 (Pipeline ✅) |
+| F-23 | Animation per Beschreibung (KI) | 🟨 | 5 |
 
 ---
 
@@ -264,6 +265,20 @@ Wir nutzen die **Auswahlkarten der Upstream-Firmware** (`UI/choice_2`). Getippte
 - [ ] Ein neuer Clip landet per Pull Request ohne Handarbeit im Asset-Pack und in der Galerie.
 - [ ] Budget- oder Formatverstöße lassen den Build fehlschlagen, statt ein kaputtes Image zu erzeugen.
 - [ ] Der Clip läuft am Gerät in richtiger Ausrichtung und im Stil der Originale (Checkliste §7).
+
+---
+
+## F-23 Animation per Beschreibung (KI) 🟨
+**Story:** Als Nutzer will ich in einem Satz beschreiben, wie Tabby reagieren soll, und bekomme eine passende Animation im Original-Stil.
+- Eingabe: Beschreibung, optional Länge und Loop/einmalig
+- Claude erzeugt `keyframes.json` für das Gesichts-Rig (Structured Output gegen das Rig-Schema, nur erlaubte Parameter)
+- Das Backend rendert eine Vorschau (gleicher Code wie in der CI), und die Web-App zeigt sie im Simulator.
+- „Übernehmen“ legt einen Pull Request mit `animations/src/<id>/` an. Die CI baut das Asset-Pack, geflasht wird per USB-Update.
+
+**AK**
+- [ ] Ungültige oder unbekannte Parameter werden abgelehnt, bevor gerendert wird.
+- [ ] Budget (KB, Farben) wird vor dem PR geprüft.
+- [ ] Kosten laufen über das KI-Budget (F-13).
 
 ---
 

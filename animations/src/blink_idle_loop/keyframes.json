@@ -1,0 +1,14 @@
+{
+  "duration_s": 3.0,
+  "loop": true,
+  "keyframes": [
+    { "t": 0.0,  "pose": { "look_x": 0, "eye_open": 1, "mouth_curve": 8 } },
+    { "t": 0.6,  "pose": { "look_x": -14, "look_y": -3 }, "ease": "inOut" },
+    { "t": 1.2,  "pose": { "look_x": -14, "look_y": -3 }, "ease": "hold" },
+    { "t": 1.30, "pose": { "eye_open": 0.08, "squash": 1.08 }, "ease": "in" },
+    { "t": 1.42, "pose": { "eye_open": 1, "squash": 1 }, "ease": "out" },
+    { "t": 2.0,  "pose": { "look_x": 12, "look_y": 0 }, "ease": "inOut" },
+    { "t": 2.5,  "pose": { "look_x": 12 }, "ease": "hold" },
+    { "t": 3.0,  "pose": { "look_x": 0 }, "ease": "inOut" }
+  ]
+}

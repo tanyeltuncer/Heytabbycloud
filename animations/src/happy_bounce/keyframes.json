@@ -1,0 +1,14 @@
+{
+  "duration_s": 2.4,
+  "loop": false,
+  "keyframes": [
+    { "t": 0.0,  "pose": { "mouth_curve": 8 } },
+    { "t": 0.25, "pose": { "squash": 1.18, "bounce": 10, "eye_open": 0.8 }, "ease": "out" },
+    { "t": 0.55, "pose": { "squash": 0.86, "bounce": -34, "eye_open": 1, "happy": 1, "mouth_open": 16, "mouth_width": 70 }, "ease": "out" },
+    { "t": 0.80, "pose": { "squash": 1.0, "bounce": -38 }, "ease": "inOut" },
+    { "t": 1.05, "pose": { "squash": 1.22, "bounce": 8 }, "ease": "in" },
+    { "t": 1.35, "pose": { "squash": 1.0, "bounce": 0, "blush": 1 }, "ease": "back" },
+    { "t": 2.0,  "pose": { "happy": 1, "blush": 1 }, "ease": "hold" },
+    { "t": 2.4,  "pose": { "happy": 0, "mouth_open": 0, "mouth_width": 94, "mouth_curve": 12, "blush": 0.4 }, "ease": "inOut" }
+  ]
+}

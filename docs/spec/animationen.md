@@ -70,7 +70,7 @@ Abgeleitet aus den Originalen:
 | **Vorschau** | Web-App → Simulator (gleiche GIF-Datei) | – |
 | **Test am Gerät** | Firmware-Build mit neuem Asset-Pack, per USB im Browser flashen | – |
 
-### Pipeline `tools/anim/` (läuft in GitHub Actions)
+### Pipeline `tools/anim/` (läuft in GitHub Actions) – ✅ umgesetzt, siehe [tools/anim/README.md](../../tools/anim/README.md)
 
 Eingabe: Ordner `animations/src/<id>/` mit `frames/*.png` oder `clip.mp4` sowie `meta.yml`:
 
@@ -96,6 +96,29 @@ Schritte:
 10. WebP-Vorschau für die Galerie der Web-App erzeugen
 
 Werkzeuge in der Pipeline: Python + Pillow, `ffmpeg`, `gifsicle` (alles im CI-Container, nichts lokal).
+
+## 4b. KI-Generierung
+
+Getestet und bewertet (Stand September 2026):
+
+| Ansatz | Ergebnis im Tabby-Stil | Bewertung |
+|---|---|---|
+| **A: KI schreibt Keyframes für ein Gesichts-Rig** (umgesetzt in `tools/anim`) | pixelsauber, exakt der Upstream-Look, 50–60 KB pro Clip, perfekte Loops | ✅ **Empfohlen für alle Gesichts- und Emotions-Animationen** |
+| B: KI-Videogenerator (Text/Bild → Video) | Raster-Video mit Rauschen, Figur „driftet“ (Augen ändern Form), kein reines Schwarz, Loops schwierig. Mit Nachbearbeitung (Palette, Schwarz-Klemme) brauchbar für Hintergründe und Effekte, aber selten „on model“ | ⚠️ nur für Ideen, Effekte, Requisiten-Skizzen |
+| C: KI-Bildgenerator für Requisiten (Tasse, Pokal …) → vektorisieren → im Rig oder in Jitter animieren | gute Requisiten, wenn man im Prompt flach, 3 Farben, schwarzer Hintergrund und dicke Konturen vorgibt | 🟨 sinnvoll als Zuarbeit |
+
+**Warum A so gut funktioniert:** Tabbys Gesicht besteht aus wenigen geometrischen Formen. Das Rig (`tools/anim/tabby_anim/rig.py`) zeichnet sie mit den **aus den Originalen vermessenen Maßen**: Augen 73 × 124 px an x = 112/348, Mund 94 px breit bei y ≈ 195, Blinzeln zur Unterkante hin. Die KI muss nur noch **Timing und Ausdruck** entscheiden, also wenige Zahlen pro Keyframe. Das können Sprachmodelle sehr gut.
+
+**Beispiele im Repo** (`animations/src/`), jeweils aus einem Satz entstanden, der Satz steht im Feld `prompt` in `meta.json`:
+- `blink_idle_loop`: „Tabby wartet entspannt, schaut kurz nach links und rechts und blinzelt einmal.“
+- `happy_bounce`: „Tabby freut sich riesig über eine erledigte Aufgabe: holt Schwung, hüpft hoch, landet mit Squash und strahlt mit roten Wangen.“
+- `sleepy_yawn`: „Tabby wird müde: Augen werden schwer, großes Gähnen, Augen fallen langsam zu.“
+
+**Rundlauf-Test der Pipeline mit Originalen:** GIF zerlegen → Pipeline → GIF. Jedes Bild ist **pixelgenau identisch**, und die Dateien sind mit gifsicle im Schnitt ~14 % kleiner (6 Clips: 883 → 761 KB).
+
+**Grenzen des Rigs (Ausbauideen):** Hände/Handschuhe, Requisiten, Spezialaugen (`>` `<`, Herzen, Tränen) und schräge Blinzel-Striche wie im Original fehlen noch. Jede neue Form ist eine kleine Zeichenfunktion im Rig und danach für die KI nur ein weiterer Parameter.
+
+**In der Web-App (F-23):** Beschreibung eintippen → Claude erzeugt `keyframes.json` (Structured Output gegen das Schema des Rigs) → Backend rendert eine Vorschau → im Simulator ansehen → „Übernehmen“ legt einen Pull Request an, und die CI baut das Asset-Pack.
 
 ## 5. Speicher-Budget ⚠️
 
