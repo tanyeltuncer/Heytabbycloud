@@ -11,20 +11,22 @@
     {
       "t": 0.7,
       "pose": {
-        "look_x": 8,
-        "look_y": 6
+        "look_x": 10,
+        "look_y": 8
       },
       "ease": "inOut"
     },
     {
-      "t": 1.2,
+      "t": 1.25,
       "pose": {
-        "look_x": -6,
-        "look_y": 8,
-        "mouth_width": 52,
-        "mouth_curve": 5,
-        "face_y": -4,
-        "turn": -0.12
+        "face_scale": 0.9,
+        "face_x": -6,
+        "face_y": -12,
+        "turn": -0.5,
+        "look_x": 10,
+        "look_y": 6,
+        "mouth_width": 50,
+        "mouth_curve": 5
       },
       "ease": "inOut"
     },
@@ -50,20 +52,22 @@
       "ease": "out"
     },
     {
-      "t": 2.75,
+      "t": 2.8,
       "pose": {
-        "face_y": -6
+        "face_y": -16
       },
       "ease": "linear"
     },
     {
-      "t": 3.05,
+      "t": 3.1,
       "pose": {
         "eye_shape": "happy",
-        "look_x": 0,
-        "look_y": 0,
+        "face_scale": 1.0,
+        "face_x": 0,
         "face_y": 0,
         "turn": 0,
+        "look_x": 0,
+        "look_y": 0,
         "bounce": 4,
         "squash": 1.08,
         "mouth_open": 14,
@@ -73,7 +77,7 @@
       "ease": "out"
     },
     {
-      "t": 3.35,
+      "t": 3.4,
       "pose": {
         "bounce": 0,
         "squash": 1.0
@@ -81,7 +85,7 @@
       "ease": "back"
     },
     {
-      "t": 3.8,
+      "t": 3.85,
       "pose": {
         "eye_shape": "pill",
         "mouth_open": 0,
@@ -104,13 +108,13 @@
       "keyframes": [
         {
           "t": 0.0,
-          "x": -2,
-          "y": -36,
-          "scale": 1.2,
+          "x": 0,
+          "y": -44,
+          "scale": 1.75,
           "progress": 1.0
         },
         {
-          "t": 1.2,
+          "t": 1.25,
           "progress": 1.0
         },
         {
@@ -119,7 +123,7 @@
           "ease": "linear"
         },
         {
-          "t": 2.75,
+          "t": 2.8,
           "progress": 0.0,
           "ease": "in"
         }
@@ -132,52 +136,53 @@
       "keyframes": [
         {
           "t": 0.0,
-          "x": 410,
-          "y": 340,
-          "rot": -8,
+          "x": 420,
+          "y": 345,
+          "rot": -10,
           "shape": "fist",
-          "variant": "sprite"
+          "variant": "sprite",
+          "scale": 0.72
         },
         {
-          "t": 0.6,
-          "x": 335,
-          "y": 238,
-          "rot": -18,
+          "t": 0.65,
+          "x": 350,
+          "y": 250,
+          "rot": -22,
           "ease": "out"
         },
         {
-          "t": 1.2,
-          "x": 294.2,
-          "y": 226.8,
-          "rot": -68,
+          "t": 1.25,
+          "x": 265.7,
+          "y": 221.3,
+          "rot": -62,
           "ease": "inOut"
         },
         {
           "t": 2.0,
-          "x": 299.2,
-          "y": 197.0,
-          "rot": -90,
+          "x": 274.5,
+          "y": 190.5,
+          "rot": -86,
           "ease": "linear"
         },
         {
-          "t": 2.75,
-          "x": 295.6,
-          "y": 175.2,
-          "rot": -106,
+          "t": 2.8,
+          "x": 272.4,
+          "y": 166.5,
+          "rot": -104,
           "ease": "in"
         },
         {
           "t": 3.3,
-          "x": 335,
-          "y": 240,
-          "rot": -14,
+          "x": 350,
+          "y": 252,
+          "rot": -16,
           "ease": "inOut"
         },
         {
           "t": 4.2,
-          "x": 410,
-          "y": 345,
-          "rot": -6,
+          "x": 420,
+          "y": 350,
+          "rot": -8,
           "ease": "in"
         }
       ]

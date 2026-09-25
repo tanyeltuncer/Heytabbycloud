@@ -29,7 +29,9 @@ def water_glass(cv: Canvas, xf: Xf, progress: float, t: float, variant: str) -> 
     if variant == "opaque":  # the old look: black inside
         cv.poly(body, BLACK)
     else:  # clear glass (default): what is behind shows through, faintly tinted
-        cv.tint(body, BLUE_LIGHT, 0.22)
+        cv.tint(body, BLUE_LIGHT, 0.34)
+        # a bright glint along one wall so the glass reads as glass even when empty
+        cv.capsule(xf((wt - 9, top + 8)), xf((wb - 6, bottom - 10)), xf.r(2.6), lerp_color(WHITE, BLUE_LIGHT, 0.3))
     interior = [xf(p) for p in [(-wt + 3, top + 2), (wt - 3, top + 2), (wb - 3, bottom - 3), (-wb + 3, bottom - 3)]]
     draw_liquid(cv, interior, progress, BLUE, BLUE_LIGHT)
     if progress > 0.15:  # glint on the glass wall
