@@ -48,9 +48,20 @@ for name, (x0, y0, x1, y1) in BOXES.items():
             continue
         bm[x, y] = 255
         stack += [(x + dx, y + dy) for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)) if 0 <= x + dx < w and 0 <= y + dy < h]
+    # enclosed pockets of background (gaps between fingers). Only real areas count: the blurred
+    # transition from black ink to white glove passes through beige-like greys, and those thin
+    # seams must not be mistaken for background, so small structures are removed by an opening.
+    pocket = Image.new("L", (w, h), 0)
+    pk = pocket.load()
     for y in range(h):
         for x in range(w):
             if near(px[x, y], bg, 10):
+                pk[x, y] = 255
+    pocket = pocket.filter(ImageFilter.MinFilter(2 * UP + 1)).filter(ImageFilter.MaxFilter(2 * UP + 1))
+    pk = pocket.load()
+    for y in range(h):
+        for x in range(w):
+            if pk[x, y]:
                 bm[x, y] = 255
     # 2) keep only ink that hugs the white glove (drops the brown arms and their outlines)
     white = Image.new("L", (w, h), 0)
@@ -61,17 +72,22 @@ for name, (x0, y0, x1, y1) in BOXES.items():
             wm[x, y] = 255 if min(r, g, b) > 232 else 0
     near_glove = white.filter(ImageFilter.MaxFilter(6 * UP + 1))
     ng = near_glove.load()
+    # the glove's own ink line hugs the white; after blurring it can look slightly warm,
+    # so the brown "arm" test only applies further away from the glove
+    ink_zone_img = white.filter(ImageFilter.MaxFilter(4 * UP + 1))  # keep a reference: .load() alone
+    ink_zone = ink_zone_img.load()                                    # would point at a freed image
     keepmask = Image.new("L", (w, h), 0)
     km = keepmask.load()
     for y in range(h):
         for x in range(w):
             r, g, b = px[x, y]
-            arm = (r - b) >= 13 and (r + g + b) < 330
+            arm = (r - b) >= 13 and (r + g + b) < 330 and not ink_zone[x, y]
             km[x, y] = 255 if (not bm[x, y] and ng[x, y] and not arm) else 0
     # opening removes JPEG specks around the ink line, one more erosion trims the ragged rim
     # light anti-aliasing pixels between the black contour and the background form a pale
     # halo on a black display: drop everything light that lies right next to the background
-    rim = bgmask.filter(ImageFilter.MaxFilter(2 * UP + 1)).load()
+    rim_img = bgmask.filter(ImageFilter.MaxFilter(2 * UP + 1))
+    rim = rim_img.load()
     for y in range(h):
         for x in range(w):
             if km[x, y] and rim[x, y]:
